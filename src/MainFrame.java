@@ -136,25 +136,23 @@ public class MainFrame implements ActionListener {
         EAST.add(EAST_BOTTOM,BorderLayout.SOUTH);
         jf.add(WEST,BorderLayout.WEST);
         jf.add(EAST,BorderLayout.EAST);
-        jf.setSize(830, 680);
+        jf.setSize(840, 680);
         jf.setLocation(100, 100);
         jf.setVisible(true);
+        jf.setResizable(false);
         jf.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         source.requestFocus();
     }
     @Override
     public void actionPerformed(ActionEvent e) {
         if(e.getSource()==open||e.getSource()==file_open)file_open();
-        if(e.getSource()==save||e.getSource()==file_save)file_save();
-        if(e.getSource()==exit||e.getSource()==file_close)System.exit(0);
-        if(e.getSource()==edit_no||e.getSource()==no_edit)source.setEditable(false);
-        if(e.getSource()==edit_yes||e.getSource()==yes_edit)source.setEditable(true);
-        if (e.getSource()==lex_ana||e.getSource()==comp_lex)Lex_Ana();
-        if (e.getSource()==comp_dma)NFA_DFA_MFA();
-        if (e.getSource()==addi_gram)Grammar();
-    }
-    void NFA_DFA_MFA(){
-
+        else if(e.getSource()==save||e.getSource()==file_save)file_save();
+        else if(e.getSource()==exit||e.getSource()==file_close)System.exit(0);
+        else if(e.getSource()==edit_no||e.getSource()==no_edit)source.setEditable(false);
+        else if(e.getSource()==edit_yes||e.getSource()==yes_edit)source.setEditable(true);
+        else if(e.getSource()==lex_ana||e.getSource()==comp_lex)Lex_Ana();
+        else if(e.getSource()==comp_dma)new NFA_DFA_MFA();
+        else if(e.getSource()==addi_gram)new Grammar();
     }
     void SetShortCuts(){
         file_open.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O,KeyEvent.CTRL_DOWN_MASK));
@@ -191,7 +189,6 @@ public class MainFrame implements ActionListener {
                 throw new RuntimeException("文件读取失败");
             }
         }
-
     }
     void file_save(){
         save_file.setVisible(true);
@@ -210,52 +207,29 @@ public class MainFrame implements ActionListener {
             }
         }
     }
-    void Grammar(){
-        error.setText("");
-        boolean bool=false;
-        int all=0;
-        String text=source.getText();
-        if (text.isEmpty())JOptionPane.showMessageDialog(jf,"请输入源代码","提示",JOptionPane.INFORMATION_MESSAGE);
-        String arrar[]=text.split("\n");
-        for (int i=0;i<arrar.length;i++){
-            Grammar grammar= new Grammar(arrar[i]);
-            for (int j=0;j<grammar.res.size();j++){
-                all+=grammar.all;
-                if (grammar.res.get(j).equals("0")){
-                    error.append("源程序中第"+i+"行的表达式存在错误\n");
-                    bool=true;
-                }
-            }
-        }
-        error.append("一共有"+all+"个句子\n");
-        if (!bool)error.append("无文法错误！！！");
-    }
     void Lex_Ana(){
         tableModel.setRowCount(0);
         error.setText("");
         boolean bool=false;
         String text=source.getText();
         if (text.isEmpty())JOptionPane.showMessageDialog(jf,"请输入源代码","提示",JOptionPane.INFORMATION_MESSAGE);
-        String arrar[]=text.split("\n");
-        for (int i=0;i<arrar.length;i++){
-            Lexcial lexcial= new Lexcial(arrar[i]);
-            for (int j=0;j<lexcial.list.size();j++){
+            Lexcial lexcial= new Lexcial(text);
+            for (int j=0;j<lexcial.result.size();j++){
                 Vector<String> value = new Vector<String>();
-                value.add(String.valueOf(i));value.add(String.valueOf(lexcial.list.get(j)));value.add(String.valueOf(lexcial.type.get(j)));
-
-                if(String.valueOf(lexcial.leg.get(j)).equals("true")){
+                value.add(String.valueOf(lexcial.result.get(j).row_number));
+                value.add(String.valueOf(lexcial.result.get(j).word));
+                value.add(String.valueOf(lexcial.result.get(j).type));
+                if(lexcial.result.get(j).legal){
                     value.add("合法");
                 }else {
                     value.add("不合法");
                     error.append("行数："+value.get(0)+"  单词："+value.get(1)+"  类型："+value.get(2)+"\n");
                     bool=true;
                 }
-                value.add(String.valueOf(lexcial.num.get(j)));
+                value.add(String.valueOf(lexcial.result.get(j).word_number));
                 tableModel.addRow(value);
-
             }
-        }
-        if (!bool)error.append("无词法错误！！！");
+        if (!bool&&lexcial.result.size()>0)error.append("无词法错误！！！");
     }
     void AddButtonImage(){
         icon1.setImage(icon1.getImage().getScaledInstance(20,20,Image.SCALE_DEFAULT));

@@ -12,21 +12,20 @@ public class Lexcial {
             "&&","||","!","&","|","^","<<",">>","+=","-=","*=","/=","=",
             "%=","&=","|=","^=",">>=","<<=","->","~","?",":"},
             c_sep={",",";","(",")","[","]","{","}","\"","\'","\\","/*","*/","//","#","\40"},
-            c_type={"算符","界符","常数","标识符","关键字"};
+            c_type={"算符","界符","常数","标识符","关键字","怪字符"};
     private char[]chars;
-    private String[] strings;
+    private String[] strings,all_string;
     private int row,base=c_code.length,algo=c_algo.length,sep=c_sep.length;
-    public ArrayList list=new ArrayList<String>();
-    public ArrayList num=new ArrayList<Integer>();
-    public ArrayList leg=new ArrayList<Boolean>();
-    public ArrayList type=new ArrayList<String>();
-    public ArrayList result=new ArrayList<MidList>();
+    public ArrayList<MidList> result=new ArrayList();
     public
     Lexcial(String str){
-        chars=(str+" ").toCharArray();
-        GetLex();
+        all_string=str.split("\n");
+        for(int i=0;i<all_string.length;i++){
+            chars=(all_string[i]+" ").toCharArray();
+            GetLex(i+1);
+        }
     }
-    void GetLex(){
+    void GetLex(int row){
         int begin=0,j,k;
         char []tmp;
         for (int i=0;i<chars.length;i++){
@@ -38,31 +37,18 @@ public class Lexcial {
                     String two=one+chars[i];
                     if (isSep(two)>-1||isSep(one)>-1&&!one.equals("\40")){
                         if (isSep(two)>-1){//两个字符的界符
-                            list.add(two);
-                            num.add(isSep(two)+base+algo);
-                            leg.add(true);
-                            type.add(c_type[1]);
                             result.add(new MidList(row,two,true,c_type[1],isSep(two)+base+algo));
                             begin=i+1;
                         }else{//begin为界符
-                            list.add(one);
-                            num.add(isSep(one)+base+algo);
-                            leg.add(true);
-                            type.add(c_type[1]);
+                            result.add(new MidList(row,one,true,c_type[1],isSep(one)+base+algo));
                             begin=i;
                         }
                     }else if(isAlgo(one)>-1&&!one.equals("\40")){//算符
                         if(isAlgo(two)>-1){
-                            list.add(two);
-                            num.add(isAlgo(two)+base);
-                            leg.add(true);
-                            type.add(c_type[0]);
+                            result.add(new MidList(row,two,true,c_type[0],isAlgo(two)+base));
                             begin=i+1;
                         }else{
-                            list.add(one);
-                            num.add(isAlgo(one)+base);
-                            leg.add(true);
-                            type.add(c_type[0]);
+                            result.add(new MidList(row,one,true,c_type[0],isAlgo(one)+base));
                             begin=i;
                         }
                     }
@@ -78,10 +64,7 @@ public class Lexcial {
                     }
                     String str_tmp=String.valueOf(tmp);
                     if (isBase(str_tmp)>-1){//关键字
-                        num.add(isBase(str_tmp));
-                        list.add(str_tmp);
-                        leg.add(true);
-                        type.add(c_type[4]);
+                        result.add(new MidList(row,str_tmp,true,c_type[4],isBase(str_tmp)));
                     }
                     //标识符和常量
                     else {
@@ -98,26 +81,14 @@ public class Lexcial {
                         }
                         if (isNum) {//数字
                             if (dotNum<=1){
-                                list.add(str_tmp);
-                                num.add(90);
-                                leg.add(true);
-                                type.add(c_type[2]);
+                                result.add(new MidList(row,str_tmp,true,c_type[2],algo+base+sep+1));
                             }else{
-                                list.add(str_tmp);
-                                num.add(90);
-                                leg.add(false);
-                                type.add(c_type[2]);
+                                result.add(new MidList(row,str_tmp,false,c_type[2],algo+base+sep+1));
                             }
                         } else if ('0' <= tmp[0] && tmp[0] <= '9') {//非法的标识符
-                            list.add(str_tmp);
-                            num.add(89);
-                            leg.add(false);
-                            type.add(c_type[3]);
+                            result.add(new MidList(row,str_tmp,false,c_type[3],algo+base+sep));
                         } else {//合法的标识符
-                            list.add(str_tmp);
-                            num.add(89);
-                            leg.add(true);
-                            type.add(c_type[3]);
+                            result.add(new MidList(row,str_tmp,true,c_type[3],algo+base+sep));
                         }
                     }
                     begin=i;
@@ -127,16 +98,10 @@ public class Lexcial {
                 String one=String.valueOf(chars[begin]);
                 if (isSep(one)>-1||isAlgo(one)>-1&&chars[begin]!='\40'){
                     if(isAlgo(one)>-1){//单个运算符或者分隔符
-                        num.add(isAlgo(one)+base);
-                        list.add(one);
-                        leg.add(true);
-                        type.add(c_type[0]);
+                        result.add(new MidList(row,one,true,c_type[0],isAlgo(one)+base));
                     }
                     else if(isSep(one)>-1&&!one.equals("\40")){
-                        num.add(isSep(one)+base+algo);
-                        list.add(one);
-                        leg.add(true);
-                        type.add(c_type[1]);
+                        result.add(new MidList(row,one,true,c_type[1],isSep(one)+base+algo));
                     }
                     begin=i;
                 }
@@ -162,12 +127,4 @@ public class Lexcial {
         }
         return -1;
     }
-//    public static void main(String[]agrs){
-//        Lexcial lexcial=new Lexcial("auto");
-//        System.out.println(lexcial.list.toString());
-//        System.out.println(lexcial.list.size());
-//        System.out.println(lexcial.type.toString());
-//        System.out.println(lexcial.num.toString());
-//        System.out.println(lexcial.leg.toString());
-//    }
 }
