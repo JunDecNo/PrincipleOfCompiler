@@ -1,6 +1,8 @@
 import javax.swing.*;
 import java.awt.*;
 import java.io.*;
+import java.util.ArrayList;
+import java.util.Comparator;
 
 public class Utils {
     static String OpenFile(JFrame jf){
@@ -35,7 +37,7 @@ public class Utils {
         if (DirPath != null && FileName != null) {
             file = new File(DirPath, FileName);//实例文件对象
             try {
-                BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(file));//创建文件读取缓冲流
+                BufferedWriter bufferedWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file),"gbk"));//创建文件读取缓冲流
                 bufferedWriter.write(str);
                 bufferedWriter.close();//关闭缓冲流
             } catch (Exception e) {
@@ -80,5 +82,22 @@ class FaList{
         this.start=faList.start;
         this.receive=faList.receive;
         this.end= faList.end;
+    }
+}
+
+class MyIntComparator implements Comparator {
+    /**
+     * o1比o2大，返回-1；o1比o2小，返回1。
+     */
+    public int compare(Object o1, Object o2) {
+        int i1 = ((ArrayList<Integer>)o1).get(0);
+        int i2 = ((ArrayList<Integer>)o2).get(0);
+        if (i1 > i2){
+            return 1;
+        }
+        if (i1 < i2){
+            return -1;
+        }
+        return 0;
     }
 }
