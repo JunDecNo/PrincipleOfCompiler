@@ -1,17 +1,15 @@
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
+import javax.swing.text.Style;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.lang.reflect.Array;
 import java.util.*;
-
+/*
+@anther 19111301035张治军
+*/
 public class NFA_DFA_MFA implements ActionListener {
     JFrame fa_frame;
     JPanel North, Center, west, center, east, bottom_nfa, read_nfa_panel,
@@ -27,8 +25,8 @@ public class NFA_DFA_MFA implements ActionListener {
     FileDialog open_file, save_file;
     String nfa_str, dfa_str, mfa_str, nor_str;
     String[] nfa_start, nfa_end, Sigma, dfa_start, dfa_end,mfa_start, mfa_end;
-    ArrayList<FaList> nfa_list = new ArrayList<>(), dfa_list = new ArrayList<>(), mfa_list = new ArrayList<>();
-    ArrayList<Integer> nfa_status = new ArrayList<>(), dfa_status = new ArrayList<>(), mfa_status = new ArrayList<>();
+    ArrayList<FaNode> nfa_list = new ArrayList<>(), dfa_list = new ArrayList<>(), mfa_list = new ArrayList<>();
+    ArrayList<Integer> dfa_status = new ArrayList<>();
     char epsilon = '#';
     NFA_DFA_MFA() {
         Init();
@@ -123,8 +121,8 @@ public class NFA_DFA_MFA implements ActionListener {
         read_mfa_panel.add(create_mfa);
         read_mfa_panel.add(save_mfa);
         bottom_mfa.setLayout(new BorderLayout());
-        bottom_mfa.add(lab27, BorderLayout.NORTH);
-        bottom_mfa.add(lab26, BorderLayout.CENTER);
+        bottom_mfa.add(lab27, BorderLayout.CENTER);
+        bottom_mfa.add(lab26, BorderLayout.NORTH);
         bottom_mfa.add(read_mfa_panel, BorderLayout.SOUTH);
         east.setLayout(new BorderLayout());
         east.add(mfa, BorderLayout.NORTH);
@@ -157,6 +155,7 @@ public class NFA_DFA_MFA implements ActionListener {
         create_nfa.setEnabled(false);
         create_dfa.setEnabled(false);
         create_mfa.setEnabled(false);
+        read_mfa.setEnabled(false);
         fa_frame.setBounds(100, 100, 900, 500);
         jTextField.setPreferredSize(new Dimension(50, 25));
         fa_frame.setVisible(true);
@@ -225,12 +224,12 @@ public class NFA_DFA_MFA implements ActionListener {
                 if (now == '(') {
                     left++;
                     if (i==0)continue;
-                    if (!(isLegal(before)||before=='*'||before=='|')) {
+                    if (!(isLegal(before)||before=='*'||before=='|'||before=='('||before==')')) {
                         legal = false;
                         break;
                     }
                 } else if (now == ')') {
-                    if (!(isLegal(before)||before=='*')|| left == 0) {
+                    if (!(isLegal(before)||before=='*'||before==')')|| left == 0) {
                         legal = false;
                         break;
                     }
@@ -291,20 +290,17 @@ public class NFA_DFA_MFA implements ActionListener {
                 if (Display(dfa_str,1)) {
                     Notice("读取成功");
                     create_mfa.setEnabled(true);
-
-
                 }
                 break;
         }
     }
-
     void Save(String string) {
         if (string.equals("nfa")) {
-            if (Utils.SaveFile(fa_frame, fa2str(nfa_list,0))) Notice("保存成功");
-        } else if (string.equals("dfa")) {
+            if (!nfa_list.isEmpty()&&Utils.SaveFile(fa_frame, fa2str(nfa_list,0))) Notice("保存成功");
+        } else if (!dfa_list.isEmpty()&&string.equals("dfa")) {
             if (Utils.SaveFile(fa_frame, fa2str(dfa_list,1))) Notice("保存成功");
         } else {
-            if (Utils.SaveFile(fa_frame,fa2str(mfa_list,2))) Notice("保存成功");
+            if (!mfa_list.isEmpty()&&Utils.SaveFile(fa_frame,fa2str(mfa_list,2))) Notice("保存成功");
         }
     }
     String arr2str(String []arr){
@@ -314,23 +310,24 @@ public class NFA_DFA_MFA implements ActionListener {
         }
         return res.toString();
     }
-    String fa2str(ArrayList<FaList> faLists,int opt){
+    String fa2str(ArrayList<FaNode> faLists,int opt){
         if(opt==0){
             StringBuilder result= new StringBuilder("开始符:" + nfa_start[0] + "\n"
                     + "终结符:" + nfa_end[0] + "\n" + "符号集:" + arr2str(Sigma) + "\n");
-            for (FaList tmp : faLists)
+            for (FaNode tmp : faLists)
                 result.append(tmp.start).append("\t").append(tmp.receive).append("\t").append(tmp.end).append("\n");
             return result.toString();
         }else if(opt==1){
-            StringBuilder result= new StringBuilder("开始符:" + nfa_start[0] + "\n"
-                    + "终结符:" + nfa_end[0] + "\n"+"最大状态数:"+dfa_status.size()+ "符号集:" + arr2str(Sigma) + "\n");
-            for (FaList tmp : faLists)
+            StringBuilder result= new StringBuilder("开始符:" + arr2str(dfa_start) + "\n"
+                    + "终结符:" + arr2str(dfa_end)+ "\n"+"最大状态数:"+dfa_status.size()+"\n"
+                    + "符号集:" + arr2str(Sigma) + "\n");
+            for (FaNode tmp : faLists)
                 result.append(tmp.start).append("\t").append(tmp.receive).append("\t").append(tmp.end).append("\n");
             return result.toString();
         }else{
             StringBuilder result= new StringBuilder("开始符:" + mfa_start[0] + "\n"
                     + "终结符:" + mfa_end[0] + "\n" + "符号集:" + arr2str(Sigma) + "\n");
-            for (FaList tmp : faLists)
+            for (FaNode tmp : faLists)
                 result.append(tmp.start).append("\t").append(tmp.receive).append("\t").append(tmp.end).append("\n");
             return result.toString();
         }
@@ -353,7 +350,7 @@ public class NFA_DFA_MFA implements ActionListener {
                     vector.add(temp[1]);
                     vector.add(temp[2]);
                     model_nfa.addRow(vector);
-                    nfa_list.add(new FaList(Integer.parseInt(temp[0]), temp[1].charAt(0), Integer.parseInt(temp[2])));
+                    nfa_list.add(new FaNode(Integer.parseInt(temp[0]), temp[1].charAt(0), Integer.parseInt(temp[2])));
                 }
             }else if(opt==1){
                 dfa_list.clear();
@@ -370,7 +367,7 @@ public class NFA_DFA_MFA implements ActionListener {
                     vector.add(temp[1]);
                     vector.add(temp[2]);
                     model_dfa.addRow(vector);
-                    dfa_list.add(new FaList(Integer.parseInt(temp[0]), temp[1].charAt(0), Integer.parseInt(temp[2])));
+                    dfa_list.add(new FaNode(Integer.parseInt(temp[0]), temp[1].charAt(0), Integer.parseInt(temp[2])));
                 }
             }
         } catch (Exception e) {
@@ -379,9 +376,8 @@ public class NFA_DFA_MFA implements ActionListener {
         return true;
     }
 
-    void Print_List(ArrayList<FaList> list, int option) {
-        for (int i = 0; i < list.size(); i++) {
-            FaList faList = list.get(i);
+    void Print_List(ArrayList<FaNode> list, int option) {
+        for (FaNode faList : list) {
             Vector<String> vector = new Vector<>();
             vector.add(String.valueOf(faList.start));
             vector.add(String.valueOf(faList.receive));
@@ -394,77 +390,92 @@ public class NFA_DFA_MFA implements ActionListener {
 
     ArrayList<Integer> Move(ArrayList<Integer> array, char ch, int option) {
         ArrayList<Integer> res = new ArrayList<>();
-        ArrayList<FaList> list;
+        ArrayList<FaNode> list;
         if (option == 0) list = nfa_list;
         else list = dfa_list;
-        for (int j = 0; j < array.size(); j++) {
-            for (int i = 0; i < list.size(); i++) {
-                FaList temp = list.get(i);
-                if (array.get(j) == temp.start && ch == temp.receive) {
+        for (Integer integer : array) {
+            for (FaNode temp : list) {
+                if (integer == temp.start && ch == temp.receive) {
                     res.add(temp.end);
                 }
             }
         }
         return Set(res);
     }
-
-    int Move(int start, char ch, int option) {
-        ArrayList<FaList> list = new ArrayList<>();
-        if (option == 0) list = nfa_list;
-        else list = dfa_list;
-        for (int i = 0; i < list.size(); i++) {
-            if (list.get(i).start == start && list.get(i).receive == ch) return list.get(i).end;
+    ArrayList<Integer> Next(ArrayList<Integer> array, char ch) {
+        ArrayList<Integer> res = new ArrayList<>();
+        for (Integer integer : array) {
+            boolean is=false;
+            for (FaNode temp : dfa_list) {
+                if (integer == temp.start && ch == temp.receive) {
+                    is=true;
+                    res.add(temp.end);
+                }
+            }
+            if(!is)res.add(-1);
+        }
+        return Set(res);
+    }
+    int Move(int start, char ch) {
+        ArrayList<FaNode> list = new ArrayList<>();
+        for (FaNode faList : dfa_list) {
+            if (faList.start == start && faList.receive == ch) return faList.end;
         }
         return -1;
     }
 
     ArrayList<Integer> E_closure(ArrayList<Integer> array) {
-        int len = array.size(), list_len = nfa_list.size(), j;
+        int len = array.size(), list_len = nfa_list.size(), j,i;
         ArrayList<Integer> result = new ArrayList<>();
         Queue<Integer> queue = new LinkedList<>();
         for (j = 0; j < len; j++) {
             queue.offer(array.get(j));
             result.add(array.get(j));
         }
+        i=0;
         while (!queue.isEmpty()) {
+            if(i==nfa_list.size())break;
             int front = queue.peek();
             for (j = 0; j < list_len; j++) {
-                if (front == nfa_list.get(j).start && nfa_list.get(j).receive == '#') {
+                if (front == nfa_list.get(j).start && nfa_list.get(j).receive == epsilon) {
                     queue.offer(nfa_list.get(j).end);
                     result.add(nfa_list.get(j).end);
                 }
             }
             queue.poll();
+            i++;
         }
         return Set(result);
     }
 
     //正则式到nfa
     void nor2nfa() {
+        model_nfa.setRowCount(0);
+        nfa_list.clear();
         String s = jTextField.getText();
-        Stack<Character> stack = new Stack();
+        Stack<Character> stack = new Stack<>();
         char[] ch = s.toCharArray();
         int i;
-        String connect = "";
+        StringBuilder connect = new StringBuilder();
         for (i = 0; i < ch.length; i++) {
-            if (ch[i] == '*' && i < ch.length - 1 && (ch[i + 1] >= 'a' && ch[i + 1] <= 'z')) {
+            if (ch[i] == '*' && i < ch.length - 1 && (Character.isLetter(ch[i+1]))) {
                 //该字符是*,下一字符是小写字母,入栈并加'.'
-                connect = connect + "*.";
+                connect.append("*.");
             } else if (ch[i] == '(' && i != 0 && ch[i - 1] != '|') {
                 //非首位的左括号,且前一个不是|,加.
-                connect += ".(";
-            } else if (i > 0 && (ch[i] >= 'a' && ch[i] <= 'z') && ((ch[i - 1] >= 'a' && ch[i - 1] <= 'z') || ch[i - 1] == ')')) {
+                connect.append(".(");
+            } else if (i > 0 && (Character.isLetter(ch[i])) && (Character.isLetter(ch[i-1]) || ch[i - 1] == ')')) {
                 //非首位字母,且前一个也为字母或者前一个是）
-                connect = connect + '.' + ch[i];
+                connect.append('.').append(ch[i]);
             } else {
-                connect += ch[i];
+                connect.append(ch[i]);
             }
         }
         //生成后缀表达式
-        char[] c = connect.toCharArray();
-        String str = "";
+        char[] c = connect.toString().toCharArray();
+        StringBuilder str = new StringBuilder();
         for (i = 0; i < c.length; i++) {
-            if (Character.isLetter(c[i])) str += c[i];//字母直接输出
+            if (Character.isLetter(c[i])) str.append(c[i]);//字母直接输出
             if (c[i] == '(')//如果是（，进栈，（的优先级是最低的
             {
                 stack.push('(');
@@ -472,7 +483,7 @@ public class NFA_DFA_MFA implements ActionListener {
             if (c[i] == ')')//)，输出栈顶元素直到左括号
             {
                 while (stack.size() > 0 && !stack.peek().equals('(')) {
-                    str += stack.pop();
+                    str.append(stack.pop());
                 }
                 if (stack.size() > 0 && stack.peek().equals('(')) {
                     stack.pop();
@@ -481,108 +492,78 @@ public class NFA_DFA_MFA implements ActionListener {
             if (c[i] == '*')//*,如果栈顶元素是*、（、），输出，并当前进栈，否则直接进栈。
             {
                 while (stack.size() > 0 && stack.peek().equals('*')) {
-                    str += '*';
+                    str.append('*');
                 }
-                if (stack.size() == 0 || (stack.size() > 0 && !stack.peek().equals('*'))) {
+                if (stack.size() == 0 || !stack.peek().equals('*')) {
                     stack.push('*');
                 }
             }
             if (c[i] == '|')//|，栈顶是|、.、*、（、），输出，并当前进栈，否则直接进栈
             {
                 while (stack.size() > 0 && (stack.peek().equals('*') || stack.peek().equals('|') || stack.peek().equals('.'))) {
-                    str += stack.pop();
+                    str.append(stack.pop());
                 }
                 stack.push('|');
             }
             if (c[i] == '.')//.,栈顶是.、*，输出，并当前进栈，否则直接进栈
             {
                 while (stack.size() > 0 && (stack.peek().equals('.') || stack.peek().equals('*'))) {
-                    str += stack.pop();
+                    str.append(stack.pop());
                 }
                 stack.push('.');
             }
         }
         while (stack.size() > 0) {
-            str += stack.pop();
+            str.append(stack.pop());
         }
-        Stack<String[]> res = new Stack<String[]>();
+        Stack<FaNode> result = new Stack<>();
         int zuo = 0, you = 0;
-        char[] hs = str.toCharArray();
+        char[] hs = str.toString().toCharArray();
         for (i = 0; i < hs.length; i++) {
             if (Character.isLetter(hs[i])) {//字母进栈
-                String[] st = new String[3];//进栈内容
                 zuo = ++you;
-                st[0] = zuo + "";
-                st[1] = hs[i] + "";
                 you++;
-                st[2] = you + "";
-                FaList faList=new FaList(zuo,hs[i],you);
+                FaNode faList=new FaNode(zuo,hs[i],you);
                 nfa_list.add(faList);
-                res.push(st);
+                result.push(faList);
             }
-
-            if (hs[i] == '*')//取一个栈顶元素出栈
-            {
-                String[] st = new String[3];
-                String[] st1 = new String[3];
-                String[] st2 = new String[3];
-                st = res.pop();
-                zuo = Integer.parseInt(st[2]);
-                zuo++;
-                st1[0] = zuo + "";
-                st1[1] = "#";
-                st1[2] = st[0];
-                nfa_list.add(new FaList(Integer.valueOf(st1[0]),st1[1].charAt(0),Integer.valueOf(st1[2])));
-                nfa_list.add(new FaList(Integer.valueOf(st[2]),'#',Integer.valueOf(st[0])));
+            if (hs[i] == '*'){//F
+                FaNode fa=result.pop();
+                zuo = fa.end+1;
                 you = zuo + 1;
-                nfa_list.add(new FaList(Integer.valueOf(st[2]),'#',Integer.valueOf(you)));
-                nfa_list.add(new FaList(Integer.valueOf(zuo),'#',Integer.valueOf(you)));
-                st2[0] = zuo + "";
-                st2[2] = you + "";
-                st2[1] = " ";
-                res.push(st2);
+                nfa_list.add(new FaNode(zuo,epsilon,fa.start));
+                nfa_list.add(new FaNode(fa.end,epsilon,fa.start));
+                nfa_list.add(new FaNode(fa.end,epsilon,you));
+                nfa_list.add(new FaNode(zuo,epsilon,you));
+                result.push(new FaNode(zuo,' ',you));
             }
-
-            if (hs[i] == '.')//取两个栈顶元素出栈，进行乘操作
+            if (hs[i] == '.')//取两个栈顶元素出栈，进行连接操作
             {
-                String[] st = new String[3];
-                String[] st1 = new String[3];
-                String[] st2 = new String[3];
-                st = res.pop();//b[5-6]
-                st1 = res.pop();//a[1-4]
-                zuo = Integer.parseInt(st1[0]);
-                you = Integer.parseInt(st[2]);
-                nfa_list.add(new FaList(Integer.valueOf(st1[2]),'#',Integer.valueOf(st[0])));
-                st2[0] = zuo + "";
-                st2[1] = " ";
-                st2[2] = you + "";
-                res.push(st2);
+                FaNode fa=result.pop(),fa1=result.pop();
+                zuo = fa1.start;
+                you = fa.end;
+                nfa_list.add(new FaNode(fa1.end,epsilon,fa.start));
+                result.push(new FaNode(zuo,' ',you));
             }
 
             if (hs[i] == '|') {
-                String[] st = new String[3];
-                String[] st1 = new String[3];
-                String[] st2 = new String[3];
-                st = res.pop();//b[5-6]
-                st1 = res.pop();//a[1-2]
-                zuo = Integer.parseInt(st[2]) + 1;
+                FaNode fa=result.pop(),fa1=result.pop();
+                zuo = fa.end + 1;
                 you = zuo + 1;
-                nfa_list.add(new FaList(Integer.valueOf(zuo),'#',Integer.valueOf(st[0])));
-                nfa_list.add(new FaList(Integer.valueOf(zuo),'#',Integer.valueOf(st1[0])));
-                nfa_list.add(new FaList(Integer.valueOf(st[2]),'#',Integer.valueOf(you)));
-                nfa_list.add(new FaList(Integer.valueOf(st1[2]),'#',Integer.valueOf(you)));
-                st2[0] = zuo + "";
-                st2[1] = " ";
-                st2[2] = you + "";
-                res.push(st2);
+                nfa_list.add(new FaNode(zuo,epsilon,fa.start));
+                nfa_list.add(new FaNode(zuo,epsilon,fa1.start));
+                nfa_list.add(new FaNode(fa.end,epsilon,you));
+                nfa_list.add(new FaNode(fa1.end,epsilon,you));
+                result.push(new FaNode(zuo,' ',you));
             }
         }
         Print_List(nfa_list,1);
         create_dfa.setEnabled(true);
         nfa_start=new String[1];nfa_end=new String[1];
-        nfa_start[0]=String.valueOf(nfa_list.get(0).start);
+        nfa_start[0]=zuo+"";
         nfa_end[0]=you+"";
-
+        lab18.setText("初始状态集：" +nfa_start[0]);
+        lab19.setText("终止状态集：" +nfa_end[0]);
     }
     //nfa到dfa
     void nfa2dfa() {
@@ -610,7 +591,7 @@ public class NFA_DFA_MFA implements ActionListener {
             for (int j = 0; j < Sigma.length; j++) {
                 char ch = Sigma[j].charAt(0);
                 if (isContain(matrix, E_closure(Move(matrix.get(i), ch, 0))) != -2) {
-                    FaList faList = new FaList(i + 1, ch,
+                    FaNode faList = new FaNode(i + 1, ch,
                             isContain(matrix, E_closure(Move(matrix.get(i), ch, 0))) + 1);
                     dfa_list.add(faList);
                     if (!dfa_status.contains(faList.start)) dfa_status.add(faList.start);
@@ -619,7 +600,8 @@ public class NFA_DFA_MFA implements ActionListener {
         }
         Print_List(dfa_list, 2);
         dfa_start = new String[1];
-        dfa_start[0] = "0";
+        dfa_start[0] = "1";
+        dfa_status=Set(dfa_status);
         for (int i = 0; i < matrix.size(); i++) {
             if (isContain(matrix.get(i), nfa_end)) {
                 ends.add(i);
@@ -635,30 +617,29 @@ public class NFA_DFA_MFA implements ActionListener {
         lab20.setText("终止状态集：" + dfa_str);
         create_mfa.setEnabled(true);
     }
-
     //dfa到mfa
     void dfa2mfa() {//分割法
         model_mfa.setRowCount(0);
         mfa_list.clear();
         ArrayList<ArrayList<Integer>> matrix = new ArrayList<>();//临时保存
-        ArrayList<ArrayList<Integer>> mfa_res = new ArrayList<>();//临时保存
         ArrayList<Integer> ends = str2int(dfa_end), not_ends = new ArrayList<>();
         for (int i = 0; i < dfa_status.size(); i++)
             if (!ends.contains(dfa_status.get(i))) not_ends.add(dfa_status.get(i));
         matrix.add(not_ends);
         matrix.add(ends);
+        matrix=SetArr(matrix);
         while (true) {
             int len = matrix.size();
-            for (int i = 0; i < matrix.size(); i++) {//开始顺序判断集合
+            for (int i = 0; i < len; i++) {//开始顺序判断集合
                 for (String s : Sigma) {//输入符号Sigma
                     ArrayList<ArrayList<Integer>> result = new ArrayList<>();//保存结果集合
-                    if (isContain(matrix, Move(matrix.get(i), s.charAt(0), 1)) == -1) {//不包含产生集合
+                    if (isContain(matrix, Next(matrix.get(i), s.charAt(0))) == -1) {//不包含产生集合
                         ArrayList<Integer> index = matrix.get(i);//选择存在状态不同的集合
                         //划分
                         for (ArrayList<Integer> integers : matrix) {
                             ArrayList<Integer> arrayList = new ArrayList<>();//array保存一个集合
                             for (Integer integer : index) {
-                                if (integers.contains(Move(integer, s.charAt(0), 1))) {
+                                if (integers.contains(Move(integer, s.charAt(0)))) {
                                     arrayList.add(integer);
                                 }
                             }
@@ -667,7 +648,7 @@ public class NFA_DFA_MFA implements ActionListener {
                         ArrayList<Integer> arrayList = new ArrayList<>();
                         for (Integer integer : index) {//不存在时
                             //array保存一个集合
-                            if (Move(integer, s.charAt(0), 1) == -1) {
+                            if (Move(integer, s.charAt(0)) == -1) {
                                 arrayList.add(integer);
                             }
                         }
@@ -680,6 +661,7 @@ public class NFA_DFA_MFA implements ActionListener {
             }
             if (len == matrix.size()) break;
         }
+        matrix=SetArr(matrix);
         Collections.sort(matrix, new MyIntComparator());
         String string="";
         for (int i=0;i<matrix.size();i++){
@@ -688,13 +670,16 @@ public class NFA_DFA_MFA implements ActionListener {
             for (String s : Sigma) {
                 if (Move(temp, s.charAt(0), 1).isEmpty()) continue;
                 ArrayList<Integer> next = Move(temp, s.charAt(0), 1);
-                FaList faList = new FaList(i + 1, s.charAt(0), isContain(matrix, next.get(0)) + 1);
+                FaNode faList = new FaNode(i + 1, s.charAt(0), isContain(matrix, next.get(0)) + 1);
                 mfa_list.add(faList);
             }
         }
         mfa_end=string.split("\40");
-        //mfa_start[0]="1";
+        mfa_start=new String[1];
+        mfa_start[0]="1";
         Print_List(mfa_list,3);
+        lab26.setText("初始状态集：" +"1");
+        lab27.setText("终止状态集：" +string);
     }
 
     //string转array
@@ -716,6 +701,12 @@ public class NFA_DFA_MFA implements ActionListener {
         ArrayList<Integer> set = new ArrayList<>();
         for (int j = 0; j < arrayList.size(); j++)
             if (!set.contains(arrayList.get(j))) set.add(arrayList.get(j));
+        return set;
+    }
+    ArrayList<ArrayList<Integer>> SetArr(ArrayList<ArrayList<Integer>> arrayList) {
+        ArrayList<ArrayList<Integer>> set = new ArrayList<>();
+        for (int j = 0; j < arrayList.size(); j++)
+            if (!arrayList.get(j).isEmpty()) set.add(arrayList.get(j));
         return set;
     }
 
@@ -753,11 +744,11 @@ public class NFA_DFA_MFA implements ActionListener {
     }
     boolean isContain(ArrayList<Integer> source,String[]strings){
         for (int i=0;i<strings.length;i++){
-            if(!source.contains(Integer.parseInt(strings[i])))return false;
+            if(source.contains(Integer.parseInt(strings[i])))return true;
         }
-        return true;
+        return false;
     }
-    public static void main(String[] args) {
-        new NFA_DFA_MFA();
-    }
+//    public static void main(String args[]){
+//        new NFA_DFA_MFA();
+//    }
 }

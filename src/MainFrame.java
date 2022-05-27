@@ -1,6 +1,3 @@
-import com.sun.jdi.event.StepEvent;
-
-import javax.sound.sampled.Line;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -8,12 +5,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Vector;
 
 public class MainFrame implements ActionListener {
     JMenuBar jMenuBar;
-    JMenu file,edit,comp,addi;
-    JMenuItem file_open,file_save,file_close,edit_yes,edit_no,comp_lex,comp_auto,comp_LL,comp_LR,comp_dma,addi_gram;
+    JMenu file,edit,comp,addi,about;
+    JMenuItem file_open,file_save,file_close,edit_yes,edit_no,
+            comp_lex,comp_auto,comp_LL,comp_LR,comp_dma,addi_gram,author;
     JToolBar jToolBar;
     JButton open,save,exit,yes_edit,no_edit,lex_ana,auto_sys,LL_ana,LR_ana;
     JTextArea source,error;
@@ -24,8 +23,9 @@ public class MainFrame implements ActionListener {
     JLabel L_source,L_export,L_error;
     ImageIcon icon1,icon2,icon3,icon4,icon5,icon6,icon7,icon8,icon9;
     FileDialog open_file,save_file;
-    String Column[]={"行号","单词","类型","是否合法","单词码"};
+    String[] Column ={"行号","单词","类型","是否合法","单词码"};
     DefaultTableModel tableModel;
+    ArrayList<MidNode>list=new ArrayList<>();
     MainFrame(){
         jf=new JFrame("编译原理实验窗口");
         WEST=new JPanel();
@@ -40,6 +40,7 @@ public class MainFrame implements ActionListener {
         edit=new JMenu("   编辑(E)   ");
         comp=new JMenu("   编译(B)   ");
         addi=new JMenu("   附加(A)   ");
+        about=new JMenu("关于");
         file_open=new JMenuItem("打开(O) Ctrl+O");
         file_close=new JMenuItem("关闭(Q) Ctrl+Q");
         file_save=new JMenuItem("保存(S) Ctrl+S");
@@ -50,7 +51,8 @@ public class MainFrame implements ActionListener {
         comp_LL=new JMenuItem("LL（1）分析");
         comp_LR=new JMenuItem("LR（0）分析");
         comp_dma=new JMenuItem("NFA_DFA_MFA");
-        addi_gram=new JMenuItem("文法分析");
+        addi_gram=new JMenuItem("算术表达式检验");
+        author=new JMenuItem("作者");
         open=new JButton("打开");
         save=new JButton("保存");
         exit=new JButton("退出");
@@ -63,15 +65,15 @@ public class MainFrame implements ActionListener {
         L_source=new JLabel("源程序-----------------");
         L_export=new JLabel("Token序列--------------");
         L_error=new JLabel("词法错误----------------");
-        icon1=new ImageIcon("src/images/open.png");
-        icon2=new ImageIcon("src/images/save.png");
-        icon3=new ImageIcon("src/images/exit.png");
-        icon4=new ImageIcon("src/images/allow.png");
-        icon5=new ImageIcon("src/images/ban.png");
-        icon6=new ImageIcon("src/images/lex_ana.png");
-        icon7=new ImageIcon("src/images/auto_sys.png");
-        icon8=new ImageIcon("src/images/LL_ana.png");
-        icon9=new ImageIcon("src/images/LR_ana.png");
+        icon1=new ImageIcon(MainFrame.class.getResource("/images/open.png"));
+        icon2=new ImageIcon(MainFrame.class.getResource("/images/save.png"));
+        icon3=new ImageIcon(MainFrame.class.getResource("/images/exit.png"));
+        icon4=new ImageIcon(MainFrame.class.getResource("/images/allow.png"));
+        icon5=new ImageIcon(MainFrame.class.getResource("/images/ban.png"));
+        icon6=new ImageIcon(MainFrame.class.getResource("/images/lex_ana.png"));
+        icon7=new ImageIcon(MainFrame.class.getResource("/images/auto_sys.png"));
+        icon8=new ImageIcon(MainFrame.class.getResource("/images/LL_ana.png"));
+        icon9=new ImageIcon(MainFrame.class.getResource("/images/LR_ana.png"));
         source=new JTextArea(20,35);
         export=new JTable();
         tableModel = (DefaultTableModel)export.getModel();
@@ -99,11 +101,13 @@ public class MainFrame implements ActionListener {
         comp.addSeparator();
         comp.add(comp_dma);
         addi.add(addi_gram);
+        about.add(author);
         //
         jMenuBar.add(file);
         jMenuBar.add(edit);
         jMenuBar.add(comp);
         jMenuBar.add(addi);
+        jMenuBar.add(about);
         jToolBar.add(open);
         jToolBar.add(save);
         jToolBar.add(exit);
@@ -139,7 +143,6 @@ public class MainFrame implements ActionListener {
         jf.setSize(840, 680);
         jf.setLocation(100, 100);
         jf.setVisible(true);
-        jf.setResizable(false);
         jf.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         source.requestFocus();
     }
@@ -151,8 +154,10 @@ public class MainFrame implements ActionListener {
         else if(e.getSource()==edit_no||e.getSource()==no_edit)source.setEditable(false);
         else if(e.getSource()==edit_yes||e.getSource()==yes_edit)source.setEditable(true);
         else if(e.getSource()==lex_ana||e.getSource()==comp_lex)Lex_Ana();
-        else if(e.getSource()==comp_dma)new NFA_DFA_MFA();
+        else if(e.getSource()==comp_dma||e.getSource()==comp_auto||e.getSource()==auto_sys)new NFA_DFA_MFA();
+        else if(e.getSource()==comp_LL||e.getSource()==LL_ana)new LL_1_Grammar();
         else if(e.getSource()==addi_gram)new Grammar();
+        else if(e.getSource()==author)Author();
     }
     void SetShortCuts(){
         file_open.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O,KeyEvent.CTRL_DOWN_MASK));
@@ -166,8 +171,14 @@ public class MainFrame implements ActionListener {
         edit_no.addActionListener(this);no_edit.addActionListener(this);
         edit_yes.addActionListener(this);yes_edit.addActionListener(this);
         lex_ana.addActionListener(this);comp_lex.addActionListener(this);
-        comp_dma.addActionListener(this);
-        addi_gram.addActionListener(this);
+        comp_dma.addActionListener(this);auto_sys.addActionListener(this);comp_auto.addActionListener(this);
+        addi_gram.addActionListener(this);author.addActionListener(this);
+        LL_ana.addActionListener(this);comp_LL.addActionListener(this);
+    }
+    void Author(){
+        JOptionPane.showMessageDialog(jf,
+                "老师：杜安红\n作者声明：19111301035张治军\n专业：19级计算机科学与技术","作者",
+                JOptionPane.INFORMATION_MESSAGE);
     }
     void file_open(){
         File file;
@@ -199,16 +210,26 @@ public class MainFrame implements ActionListener {
             file=new File(DirPath,FileName);//实例文件对象
             try {
                 BufferedWriter bufferedWriter=new BufferedWriter(new FileWriter(file));//创建文件读取缓冲流
-                String string=source.getText();//获取文本域的字符串
-                bufferedWriter.write(string);
+                StringBuffer stringBuffer= new StringBuffer();//获取文本域的字符串
+                stringBuffer.append("行号\t\t单词\t\t类型\t\t是否合法\t\t单词码\n");
+                for (MidNode midList : list) {
+                    stringBuffer.append(midList.row_number).append("\t\t")
+                            .append(midList.word).append("\t\t")
+                            .append(midList.type).append("\t\t")
+                            .append(midList.legal).append("\t\t")
+                            .append(midList.word_number).append("\n");
+                }
+                bufferedWriter.write(String.valueOf(stringBuffer));
                 bufferedWriter.close();//关闭缓冲流
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
+
     }
     void Lex_Ana(){
         tableModel.setRowCount(0);
+        list.clear();
         error.setText("");
         boolean bool=false;
         String text=source.getText();
@@ -227,6 +248,7 @@ public class MainFrame implements ActionListener {
                     bool=true;
                 }
                 value.add(String.valueOf(lexcial.result.get(j).word_number));
+                list.add(lexcial.result.get(j));
                 tableModel.addRow(value);
             }
         if (!bool&&lexcial.result.size()>0)error.append("无词法错误！！！");

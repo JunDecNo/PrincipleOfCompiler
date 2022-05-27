@@ -113,8 +113,8 @@ public class Grammar implements ActionListener {
                     }
                     else continue;
                 }
-                MidList before=new MidList(lexcial.result.get(i-1)),
-                        now=new MidList(lexcial.result.get(i));
+                MidNode before=new MidNode(lexcial.result.get(i-1)),
+                        now=new MidNode(lexcial.result.get(i));
                 if (now.type.equals("标识符")){
                     if(before.type.equals("标识符")){
                         legal=false;break;
@@ -163,8 +163,8 @@ public class Grammar implements ActionListener {
                     }
                     else continue;
                 }
-                MidList before=new MidList(lexcial.result.get(i-1)),
-                        now=new MidList(lexcial.result.get(i));
+                MidNode before=new MidNode(lexcial.result.get(i-1)),
+                        now=new MidNode(lexcial.result.get(i));
                 if (now.type.equals("标识符")){
                     if(before.type.equals("标识符")){
                         legal=false;break;
@@ -197,8 +197,5 @@ public class Grammar implements ActionListener {
         }else {
             jTextArea.setText("存在语法错误！！！！");
         }
-    }
-    public static void main(String[]args){
-        new Grammar();
     }
 }

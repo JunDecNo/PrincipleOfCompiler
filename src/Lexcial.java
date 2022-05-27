@@ -16,9 +16,8 @@ public class Lexcial {
     private char[]chars;
     private String[] strings,all_string;
     private int row,base=c_code.length,algo=c_algo.length,sep=c_sep.length;
-    public ArrayList<MidList> result=new ArrayList();
-    public
-    Lexcial(String str){
+    public ArrayList<MidNode> result=new ArrayList();
+    public Lexcial(String str){
         all_string=str.split("\n");
         for(int i=0;i<all_string.length;i++){
             chars=(all_string[i]+" ").toCharArray();
@@ -37,18 +36,18 @@ public class Lexcial {
                     String two=one+chars[i];
                     if (isSep(two)>-1||isSep(one)>-1&&!one.equals("\40")){
                         if (isSep(two)>-1){//两个字符的界符
-                            result.add(new MidList(row,two,true,c_type[1],isSep(two)+base+algo));
+                            result.add(new MidNode(row,two,true,c_type[1],isSep(two)+base+algo));
                             begin=i+1;
                         }else{//begin为界符
-                            result.add(new MidList(row,one,true,c_type[1],isSep(one)+base+algo));
+                            result.add(new MidNode(row,one,true,c_type[1],isSep(one)+base+algo));
                             begin=i;
                         }
                     }else if(isAlgo(one)>-1&&!one.equals("\40")){//算符
                         if(isAlgo(two)>-1){
-                            result.add(new MidList(row,two,true,c_type[0],isAlgo(two)+base));
+                            result.add(new MidNode(row,two,true,c_type[0],isAlgo(two)+base));
                             begin=i+1;
                         }else{
-                            result.add(new MidList(row,one,true,c_type[0],isAlgo(one)+base));
+                            result.add(new MidNode(row,one,true,c_type[0],isAlgo(one)+base));
                             begin=i;
                         }
                     }
@@ -64,7 +63,7 @@ public class Lexcial {
                     }
                     String str_tmp=String.valueOf(tmp);
                     if (isBase(str_tmp)>-1){//关键字
-                        result.add(new MidList(row,str_tmp,true,c_type[4],isBase(str_tmp)));
+                        result.add(new MidNode(row,str_tmp,true,c_type[4],isBase(str_tmp)));
                     }
                     //标识符和常量
                     else {
@@ -81,14 +80,14 @@ public class Lexcial {
                         }
                         if (isNum) {//数字
                             if (dotNum<=1){
-                                result.add(new MidList(row,str_tmp,true,c_type[2],algo+base+sep+1));
+                                result.add(new MidNode(row,str_tmp,true,c_type[2],algo+base+sep+1));
                             }else{
-                                result.add(new MidList(row,str_tmp,false,c_type[2],algo+base+sep+1));
+                                result.add(new MidNode(row,str_tmp,false,c_type[2],algo+base+sep+1));
                             }
                         } else if ('0' <= tmp[0] && tmp[0] <= '9') {//非法的标识符
-                            result.add(new MidList(row,str_tmp,false,c_type[3],algo+base+sep));
+                            result.add(new MidNode(row,str_tmp,false,c_type[3],algo+base+sep));
                         } else {//合法的标识符
-                            result.add(new MidList(row,str_tmp,true,c_type[3],algo+base+sep));
+                            result.add(new MidNode(row,str_tmp,true,c_type[3],algo+base+sep));
                         }
                     }
                     begin=i;
@@ -98,10 +97,10 @@ public class Lexcial {
                 String one=String.valueOf(chars[begin]);
                 if (isSep(one)>-1||isAlgo(one)>-1&&chars[begin]!='\40'){
                     if(isAlgo(one)>-1){//单个运算符或者分隔符
-                        result.add(new MidList(row,one,true,c_type[0],isAlgo(one)+base));
+                        result.add(new MidNode(row,one,true,c_type[0],isAlgo(one)+base));
                     }
                     else if(isSep(one)>-1&&!one.equals("\40")){
-                        result.add(new MidList(row,one,true,c_type[1],isSep(one)+base+algo));
+                        result.add(new MidNode(row,one,true,c_type[1],isSep(one)+base+algo));
                     }
                     begin=i;
                 }
