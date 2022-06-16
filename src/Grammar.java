@@ -100,10 +100,12 @@ public class Grammar implements ActionListener {
                 legal=false;break;
             }
             if(i==lexcial.result.size()-1){
-                if(!lexcial.result.get(i).type.equals("标识符"))legal=false;
+                if(lexcial.result.get(i).type.equals("算符")){
+                    legal=false;break;
+                }
             }
         }
-        if (legal&&equal==0){
+        if (legal&&equal==0){//不是赋值情况
             for(int i=0;i<lexcial.result.size();i++){
                 if(i==0){
                     if(lexcial.result.get(i).type.equals("算符")){
@@ -144,7 +146,8 @@ public class Grammar implements ActionListener {
                     }
                 }
             }
-        }else if(equal==1){
+        }
+        else if(equal==1){//赋值情况
             for(int i=0;i<lexcial.result.size();i++){
                 if(lexcial.result.get(i).word.equals(formal))index=i;
             }

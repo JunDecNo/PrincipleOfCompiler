@@ -1,6 +1,7 @@
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -112,6 +113,71 @@ public class Utils {
         for (String ch:source)str.append(ch);
         return str.toString();
     }
+    static DefaultTableModel SetColumnName(DefaultTableModel model,String[]cols){
+        model.setColumnCount(0);
+        model.setRowCount(0);
+        for (String str:cols){
+            model.addColumn(str);
+        }
+        return model;
+    }
+    static String GetFileString(String FilePath,int start,int end){
+        File file;
+        StringBuffer stringBuffer=new StringBuffer();
+        String DirPath=FilePath;
+        int rows=0;
+        if (DirPath!=null){
+            file=new File(DirPath);//实例文件对象
+            try {
+                BufferedReader bufferedReader=new BufferedReader(new FileReader(file));//创建文件读取缓冲流
+                String line=null;//初始化字符串，用于获取每行的字符串
+                while((line=bufferedReader.readLine())!=null){
+                    if (rows>=start&&rows<=end){
+                        stringBuffer.append(line+'\n');//在每次读取一行时，换行,读取指定位置
+                    }
+                    rows++;
+                }
+                bufferedReader.close();//关闭缓冲流
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new RuntimeException("文件读取失败");
+            }
+        }
+        return String.valueOf(stringBuffer);
+    }
+    static String GetFileString(String FilePath,int index){
+        File file;
+        StringBuffer stringBuffer=new StringBuffer();
+        String DirPath=FilePath;
+        if (DirPath!=null){
+            file=new File(DirPath);//实例文件对象
+            try {
+                BufferedReader bufferedReader=new BufferedReader(new FileReader(file));//创建文件读取缓冲流
+                String line=null;//初始化字符串，用于获取每行的字符串
+                while((line=bufferedReader.readLine())!=null){
+                        stringBuffer.append(line+'\n');//在每次读取一行时，换行,读取指定位置
+                }
+                bufferedReader.close();//关闭缓冲流
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new RuntimeException("文件读取失败");
+            }
+        }
+
+        return String.valueOf(stringBuffer).split("-------------END---------------")[index];
+    }
+    static Image imageScale(Image image,double wScale,double hScale){
+        if(wScale<0||hScale<0){
+            wScale=1.0;
+            hScale=1.0;
+        }
+        BufferedImage targetImg = new BufferedImage((int)(wScale*image.getWidth(null)),
+                (int)(hScale*image.getHeight(null)),BufferedImage.TYPE_INT_ARGB);
+        Graphics2D gra = (Graphics2D)targetImg.getGraphics();
+        gra.scale(wScale,hScale);
+        gra.drawImage(image,0,0,null);
+        return targetImg;
+    }
 }
 class MidNode{
     public int row_number;
@@ -177,6 +243,19 @@ class LLNode{
     LLNode(String Vn,String V){
         this.Vn=Vn;
         this.V=V;
+    }
+}
+class LRNode{
+    public ArrayList<LLNode>list;
+    public ArrayList<ArrayList<Character>>follow;
+    LRNode(){}
+    LRNode(LRNode node){
+        this.list=new ArrayList<>(node.list);
+        this.follow=new ArrayList<>(node.follow);
+    }
+    LRNode(ArrayList<LLNode>list,ArrayList<ArrayList<Character>>follow){
+        this.list=new ArrayList<>(list);
+        this.follow=new ArrayList<>(follow);
     }
 }
 class ClusterNode{
