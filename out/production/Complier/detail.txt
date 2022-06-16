@@ -1,0 +1,139 @@
+    private String[] c_code={
+            "auto","break","case","char","const","continue",
+            "default","do","double","else","enum","extern",
+            "float","for","goto","if","int","include","long","register",
+            "return","short","signed","sizeof","static","struct",
+            "switch","typedef","unsigned","union","void","volatile","while"},
+            c_algo={"+","-","*","/","%","++","--",">","<","==",">=","<=","!=",
+            "&&","||","!","&","|","^","<<",">>","+=","-=","*=","/=","=",
+            "%=","&=","|=","^=",">>=","<<=","->","~","?",":"},
+            c_sep={",",";","(",")","[","]","{","}","\"","\'","\\","/*","*/","//","#","\40"},
+            c_type={"算符","界符","常数","标识符","关键字","怪字符"};
+    private char[]chars;
+    private String[] strings,all_string;
+    private int row,base=c_code.length,algo=c_algo.length,sep=c_sep.length;
+    public ArrayList<MidNode> result=new ArrayList();
+    //c_code为关键字 c_algo为算符 c_sep为分割符 c_type为类型
+-------------END---------------
+    JFrame fa_frame;
+    JPanel North, Center, west, center, east, bottom_nfa, read_nfa_panel,
+            bottom_dfa, read_dfa_panel, bottom_mfa, read_mfa_panel;
+    JLabel exp_label, input_label, nfa, dfa, mfa, lab18, lab19, lab21, lab20, lab27, lab26, exam_label;
+    JTextField jTextField;
+    JButton verify, reset, read_nfa, create_nfa, save_nfa,
+            read_dfa, create_dfa, save_dfa, read_mfa, create_mfa, save_mfa;
+    JTable nfa_table, dfa_table, mfa_table;
+    JScrollPane nfa_scroll, dfa_scroll, mfa_scroll;
+    String[] Column = {"起始状态", "接受符号", "到达状态"};
+    DefaultTableModel model_nfa, model_dfa, model_mfa;
+    FileDialog open_file, save_file;
+    String nfa_str, dfa_str, mfa_str, nor_str;
+    String[] nfa_start, nfa_end, Sigma, dfa_start, dfa_end,mfa_start, mfa_end;
+    ArrayList<FaNode> nfa_list = new ArrayList<>(), dfa_list = new ArrayList<>(), mfa_list = new ArrayList<>();
+    ArrayList<Integer> dfa_status = new ArrayList<>();
+    char epsilon = '#';
+-------------END---------------
+    private JTextArea Input_Area;
+    private JTextField Sentence_Area;
+    private JButton allDis_btn;
+    private JButton ana_btn;
+    private JButton confirm_btn;
+    private JButton first_btn;
+    private JTable first_table;
+    private JButton follow_btn;
+    private JTable follow_table;
+    private JLabel jLabel1-10;
+    private JScrollPane jScrollPane1-5
+    private JSeparator jSeparator1-6
+    private JButton oneDis_btn;
+    private JButton open_file_btn;
+    private JButton predict_btn;
+    private JTable predict_table;
+    private JTable result_table;
+    private JButton save_ana_btn;
+    private JButton save_file_btn;
+    public DefaultTableModel First_Model,Follow_Model,Predict_Model,Result_Model;
+    public ArrayList<LLNode> Node_List=new ArrayList<>();//存储产生式
+    public ArrayList<String>Vn=new ArrayList<>(),V=new ArrayList<>(),Vt=new ArrayList<>();//存储字符
+    public Map<String, Integer> isNullMap=new HashMap<>();//是否为空的字典
+    public Map<String,ArrayList<Character>>FirstMap=new HashMap<>();//first集合
+    public Map<String,ArrayList<Character>>FollowMap=new HashMap<>();//follow集合
+    public Map<String,ArrayList<Character>>SelectMap=new HashMap<>();//Select集合
+    public ArrayList<Vector<String>>Final=new ArrayList<>(),Save;//用来保存分析结果集合。
+    char epsilon='$',end='#';
+    String notice_str;//通知字符串
+-------------END---------------
+    private JTextArea Input_Area;
+    private JTextField Sentence_Area;
+    private JButton allDis_btn;
+    private JButton ana_btn;
+    private JButton confirm_btn;
+    private JButton project_btn;
+    private JLabel jLabel1;
+    private JLabel jLabel10;
+    private JLabel jLabel2;
+    private JLabel jLabel3;
+    private JLabel jLabel4;
+    private JLabel jLabel5;
+    private JLabel jLabel7;
+    private JLabel jLabel8;
+    private JLabel jLabel9;
+    private JScrollPane jScrollPane1;
+    private JScrollPane jScrollPane2;
+    private JScrollPane jScrollPane4;
+    private JScrollPane jScrollPane5;
+    private JSeparator jSeparator1;
+    private JSeparator jSeparator2;
+    private JSeparator jSeparator4;
+    private JSeparator jSeparator5;
+    private JSeparator jSeparator6;
+    private JButton oneDis_btn;
+    private JButton open_file_btn;
+    private JButton struct_btn;
+    private JTable project_table;
+    private JTable result_table;
+    private JButton save_ana_btn;
+    private JButton save_file_btn;
+    private JButton select_btn;
+    private JTable struct_table;
+    //数据部分
+    private String notice_str;
+    private int GrammarType=-1;
+    private ArrayList<LLNode> Node_List=new ArrayList<>(),Item_List=new ArrayList<>();//产生式、项目集合
+    private ArrayList<ClusterNode>Cluster_List=new ArrayList<>();//簇集合
+    private Map<Integer,ArrayList<ArrayList<Character>>> ClusterFollow=new HashMap<>();//用于保存每个项目集的follow集合
+    private ArrayList<String>Vn=new ArrayList<>(),V=new ArrayList<>(),Vt=new ArrayList<>();
+    private ArrayList<Vector<String>>Final=new ArrayList<>(),Save;//用来保存分析结果集合。
+    private ArrayList<Integer>Conflict=new ArrayList<>();
+    private Map<Integer,ArrayList<Character>>VtList=new HashMap<>();
+    private Map<String,ArrayList<Character>>FollowMap;
+    char dot='.',end='#';
+    private DefaultTableModel Project_Model,Struct_Model,Result_Model;
+    //结束
+-------------END---------------
+    private JButton Reset;
+    private JButton allDis;
+    private ButtonGroup buttonGroup1;
+    private JButton create;
+    private JLabel jLabel1;
+    private JLabel jLabel2;
+    private JLabel jLabel3;
+    private JLabel jLabel4;
+    private JScrollPane jScrollPane1;
+    private JScrollPane jScrollPane2;
+    private JSeparator jSeparator1;
+    private JSeparator jSeparator2;
+    private JSeparator jSeparator3;
+    private JTable jTable1;
+    private JTable jTable2;
+    private JTextField jTextField;
+    private JButton oneDis;
+    private JButton save;
+    private JButton start;
+    private DefaultTableModel AnaLysisModel,MidModel;
+-------------END---------------
+-------------END---------------
+-------------END---------------
+-------------END---------------
+-------------END---------------
+-------------END---------------
