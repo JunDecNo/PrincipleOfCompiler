@@ -1,7 +1,7 @@
 <component name="ArtifactManager">
-  <artifact type="jar" name="Complier:jar">
-    <output-path>$PROJECT_DIR$/out/artifacts/Complier_jar</output-path>
-    <root id="archive" name="Complier.jar">
+  <artifact type="jar" name="Complier_JDK11">
+    <output-path>$PROJECT_DIR$/out/artifacts/Complier_JDK11</output-path>
+    <root id="archive" name="Complier_JDK11.jar">
       <element id="directory" name="META-INF">
         <element id="file-copy" path="$PROJECT_DIR$/META-INF/MANIFEST.MF" />
       </element>

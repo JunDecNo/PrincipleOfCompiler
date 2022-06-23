@@ -34,6 +34,7 @@ public class NFA_DFA_MFA implements ActionListener {
         AddListener();
         Setting();
     }
+    //初始化
     void Init() {
         fa_frame = new JFrame("NFA_DFA_MFA");
         North = new JPanel();
@@ -202,6 +203,8 @@ public class NFA_DFA_MFA implements ActionListener {
         else if (e.getSource() == create_mfa) dfa2mfa();
         else if (e.getSource() == save_mfa) Save("mfa");
     }
+    //结束
+
     //验证
     void Verify() {
         char[] chars = jTextField.getText().toCharArray();
@@ -261,6 +264,7 @@ public class NFA_DFA_MFA implements ActionListener {
 //            if (Character.isLetter(chars[j]))Sigma[k]=String.valueOf(chars[j]);
 //        }
     }
+    //判断是否是合法的字符
     boolean isLegal(char now) {
         return (now <= 'z' && now >= 'a') || (now <= 'Z' && now >= 'A') || (now <= '9' && now >= '0');
     }
@@ -310,6 +314,7 @@ public class NFA_DFA_MFA implements ActionListener {
         }
         return res.toString();
     }
+    //将falist转换为字符串
     String fa2str(ArrayList<FaNode> faLists,int opt){
         if(opt==0){
             StringBuilder result= new StringBuilder("开始符:" + nfa_start[0] + "\n"
@@ -332,6 +337,7 @@ public class NFA_DFA_MFA implements ActionListener {
             return result.toString();
         }
     }
+    //输出字符串
     boolean Display(String string,int opt) {
         String[] strings = string.split("\n");
         int len = strings.length;
@@ -375,7 +381,7 @@ public class NFA_DFA_MFA implements ActionListener {
         }
         return true;
     }
-
+    //打印状态机的状态
     void Print_List(ArrayList<FaNode> list, int option) {
         for (FaNode faList : list) {
             Vector<String> vector = new Vector<>();
@@ -387,7 +393,7 @@ public class NFA_DFA_MFA implements ActionListener {
             else if (option == 3) model_mfa.addRow(vector);
         }
     }
-
+    //Move函数，寻找接受符的下一个状态集合
     ArrayList<Integer> Move(ArrayList<Integer> array, char ch, int option) {
         ArrayList<Integer> res = new ArrayList<>();
         ArrayList<FaNode> list;
@@ -402,6 +408,7 @@ public class NFA_DFA_MFA implements ActionListener {
         }
         return Set(res);
     }
+    //获取dfa的下一个状态，如果没有就是用-1表示
     ArrayList<Integer> Next(ArrayList<Integer> array, char ch) {
         ArrayList<Integer> res = new ArrayList<>();
         for (Integer integer : array) {
@@ -416,6 +423,7 @@ public class NFA_DFA_MFA implements ActionListener {
         }
         return Set(res);
     }
+    //Move函数，寻找接受符的下一个状态
     int Move(int start, char ch) {
         ArrayList<FaNode> list = new ArrayList<>();
         for (FaNode faList : dfa_list) {
@@ -423,7 +431,7 @@ public class NFA_DFA_MFA implements ActionListener {
         }
         return -1;
     }
-
+    //E_closure函数，获取状态的空闭包，为nfa->dfa服务
     ArrayList<Integer> E_closure(ArrayList<Integer> array) {
         int len = array.size(), list_len = nfa_list.size(), j,i;
         ArrayList<Integer> result = new ArrayList<>();
@@ -690,6 +698,7 @@ public class NFA_DFA_MFA implements ActionListener {
         }
         return res;
     }
+    //将result中元素加入matrix中，用于dfa->mfa
     void Add(ArrayList<ArrayList<Integer>>matrix,ArrayList<ArrayList<Integer>>result){
         for (ArrayList<Integer> arrayList : result) {
             if (arrayList.isEmpty()) continue;
@@ -703,23 +712,24 @@ public class NFA_DFA_MFA implements ActionListener {
             if (!set.contains(arrayList.get(j))) set.add(arrayList.get(j));
         return set;
     }
+    //删除重复元素
     ArrayList<ArrayList<Integer>> SetArr(ArrayList<ArrayList<Integer>> arrayList) {
         ArrayList<ArrayList<Integer>> set = new ArrayList<>();
         for (int j = 0; j < arrayList.size(); j++)
-            if (!arrayList.get(j).isEmpty()) set.add(arrayList.get(j));
+            if (!set.contains(arrayList.get(j))) set.add(arrayList.get(j));
         return set;
     }
-
+    //获取未标记的状态
     int GetFalse(ArrayList<Boolean> booleans) {
         for (int i = 0; i < booleans.size(); i++)
             if (!booleans.get(i)) return i;
         return -1;
     }
-
+    //提示函数
     void Notice(String str) {
         JOptionPane.showMessageDialog(fa_frame, str, "提示", JOptionPane.INFORMATION_MESSAGE);
     }
-
+    //判断element是否包含在contain中
     int isContain(ArrayList<ArrayList<Integer>> contain, ArrayList<Integer> element) {
         if (element.size() == 0) return -2;
         for (int i = 0; i < contain.size(); i++) {

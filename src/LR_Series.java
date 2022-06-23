@@ -9,60 +9,60 @@ import java.util.*;
 
 public class LR_Series extends JFrame implements ActionListener {
     // Variables declaration - do not modify
-    private JTextArea Input_Area;
-    private JTextField Sentence_Area;
-    private JButton allDis_btn;
-    private JButton ana_btn;
-    private JButton confirm_btn;
-    private JButton project_btn;
-    private JLabel jLabel1;
-    private JLabel jLabel10;
-    private JLabel jLabel2;
-    private JLabel jLabel3;
-    private JLabel jLabel4;
-    private JLabel jLabel5;
-    private JLabel jLabel7;
-    private JLabel jLabel8;
-    private JLabel jLabel9;
-    private JScrollPane jScrollPane1;
-    private JScrollPane jScrollPane2;
-    private JScrollPane jScrollPane4;
-    private JScrollPane jScrollPane5;
-    private JSeparator jSeparator1;
-    private JSeparator jSeparator2;
-    private JSeparator jSeparator4;
-    private JSeparator jSeparator5;
-    private JSeparator jSeparator6;
-    private JButton oneDis_btn;
-    private JButton open_file_btn;
-    private JButton struct_btn;
-    private JTable project_table;
-    private JTable result_table;
-    private JButton save_ana_btn;
-    private JButton save_file_btn;
-    private JButton select_btn;
-    private JTable struct_table;
+    public JTextArea Input_Area;
+    public JTextField Sentence_Area;
+    public JButton allDis_btn;
+    public JButton ana_btn;
+    public JButton confirm_btn;
+    public JButton project_btn;
+    public JLabel jLabel1;
+    public JLabel jLabel10;
+    public JLabel jLabel2;
+    public JLabel jLabel3;
+    public JLabel jLabel4;
+    public JLabel jLabel5;
+    public JLabel jLabel7;
+    public JLabel jLabel8;
+    public JLabel jLabel9;
+    public JScrollPane jScrollPane1;
+    public JScrollPane jScrollPane2;
+    public JScrollPane jScrollPane4;
+    public JScrollPane jScrollPane5;
+    public JSeparator jSeparator1;
+    public JSeparator jSeparator2;
+    public JSeparator jSeparator4;
+    public JSeparator jSeparator5;
+    public JSeparator jSeparator6;
+    public JButton oneDis_btn;
+    public JButton open_file_btn;
+    public JButton struct_btn;
+    public JTable project_table;
+    public JTable result_table;
+    public JButton save_ana_btn;
+    public JButton save_file_btn;
+    public JButton select_btn;
+    public JTable struct_table;
     //数据部分
-    private String notice_str;
-    private int GrammarType=-1;
-    private ArrayList<LLNode> Node_List=new ArrayList<>(),Item_List=new ArrayList<>();//产生式、项目集合
-    private ArrayList<ClusterNode>Cluster_List=new ArrayList<>();//簇集合
-    private Map<Integer,ArrayList<ArrayList<Character>>> ClusterFollow=new HashMap<>();//用于保存每个项目集的follow集合
-    private ArrayList<String>Vn=new ArrayList<>(),V=new ArrayList<>(),Vt=new ArrayList<>();
-    private ArrayList<Vector<String>>Final=new ArrayList<>(),Save;//用来保存分析结果集合。
-    private ArrayList<Integer>Conflict=new ArrayList<>();
-    private Map<Integer,ArrayList<Character>>VtList=new HashMap<>();
-    private Map<String,ArrayList<Character>>FollowMap;
+    public String notice_str;
+    public int GrammarType=-1;
+    public ArrayList<LLNode> Node_List=new ArrayList<>(),Item_List=new ArrayList<>();//产生式、项目集合
+    public ArrayList<ClusterNode>Cluster_List=new ArrayList<>();//簇集合
+    public Map<Integer,ArrayList<ArrayList<Character>>> ClusterFollow=new HashMap<>();//用于保存每个项目集的follow集合
+    public ArrayList<String>Vn=new ArrayList<>(),V=new ArrayList<>(),Vt=new ArrayList<>();
+    public ArrayList<Vector<String>>Final=new ArrayList<>(),Save;//用来保存分析结果集合。
+    public ArrayList<Integer>Conflict=new ArrayList<>();
+    public Map<Integer,ArrayList<Character>>VtList=new HashMap<>();
+    public Map<String,ArrayList<Character>>FollowMap;
     char dot='.',end='#';
-    private DefaultTableModel Project_Model,Struct_Model,Result_Model;
+    public DefaultTableModel Project_Model,Struct_Model,Result_Model;
+    boolean Semantic=false;
     //结束
     // End of variables declaration
     public LR_Series() {
         initComponents();
     }
-
     @SuppressWarnings("unchecked")
-    private void initComponents() {
+    public void initComponents() {
         Project_Model=new DefaultTableModel();
         Struct_Model=new DefaultTableModel();
         Result_Model=new DefaultTableModel();
@@ -294,32 +294,92 @@ public class LR_Series extends JFrame implements ActionListener {
         ComponentControl();
     }// </editor-fold>
     //方法设置
+    //数据预处理
+    boolean DataPreprocess(String str){//数据预处理,提高程序的健壮性
+        str = str.replace("\40","");
+        String[]strings=str.split("\n");
+        StringBuffer result=new StringBuffer();
+        boolean error=false;
+        for (String s:strings){//对每行元素进行处理
+            if (s.equals(""))continue;
+            if (s.length()<4){
+                result.append(s).append("\t<---不正确产生式位置\n");
+                error=true;
+            }
+            else {
+                if (s.contains("->")){
+                    result.append(s);
+                    if (s.substring(0,s.indexOf("-")).isEmpty()||s.substring(s.indexOf("->")+1).isEmpty()){
+                        result.append("\t<---不正确产生式位置");
+                        error=true;
+                    }
+
+                }else{
+                    char[]chars=s.toCharArray();
+                    int VnEnd=0;
+                    for (int i=0;i<chars.length;i++){
+                        if (!Character.isLetter(chars[i])){
+                            VnEnd=i;break;
+                        }
+                    }
+                    result.append(s, 0, VnEnd).append("->").append(s.substring(VnEnd+1));
+                    if (s.substring(0,VnEnd).isEmpty()||s.substring(VnEnd+1).isEmpty()){
+                        Utils.Notice(this,"存在输入式不合法");
+                        result.append("\t<---不正确产生式位置");
+                        error=true;
+                    }
+                }
+                result.append("\n");
+            }
+        }
+        if (error)Utils.Notice(this,"存在输入式不合法");
+        Input_Area.setText(result.toString());
+        return error;
+    }
+    //构造项目集规范族
     void Struct(){
-        if (Vt.size()+Vn.size()>9) struct_table.setPreferredSize(new Dimension(124,26));
+        if (Vt.size()+Vn.size()>9) struct_table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);;
         if (GrammarType==0)Struct_LR_0_Table();
         else if(GrammarType==1)Struct_SLR_1_Table();
     }
+    //保存分析结果
     void Save_Ana(){
-        StringBuilder res= new StringBuilder("步骤\t\t\t\t状态栈\t\t\t符号栈\t\t\t输入串\t\t\tACTION\t\t\tGOTO\n");
         if (Save.isEmpty()){
             Utils.Notice(this,"输入结果为空，无法保存");
             return;
         }
+        StringBuilder res= new StringBuilder();
+        if (GrammarType==0)
+            res.append("----------------------------LR(0)文法-----------------------------------\n");
+        else if(GrammarType==1)
+            res.append("----------------------------SLR(1)文法-----------------------------------\n");
+        for (LLNode node:Node_List){
+            res.append(node.Vn).append("->").append(node.V).append("\n");
+        }
+        res.append("步骤\t\t\t\t状态栈\t\t\t符号栈\t\t\t输入串\t\t\tACTION\t\t\tGOTO\n");
         for (int i=0;i<Save.size();i++){
             Vector<String> vector=Save.get(i);
             for (String s:vector){
-                res.append(s).append("\t\t\t\t");
+                if (s==null)continue;
+                int len=s.length();
+                if (s.startsWith("#"))len--;
+                switch (len/5){
+                    case 0:res.append(s).append("\t\t\t\t");break;
+                    case 1:res.append(s).append("\t\t\t");break;
+                    case 2:res.append(s).append("\t\t");break;
+                    case 3:res.append(s).append("\t");break;
+                }
             }
             res.append("\n");
             Save.remove(i);i--;
         }
-        res.append("分析结果:");
-        if (notice_str.equals("接受，匹配成功"))res.append("分析完成，匹配成功");
-        else if(notice_str.equals("失败，归约失败"))res.append("分析完成,匹配失败");
+        res.append("\n分析结果:");
+        res.append("分析完成，").append(notice_str);
         Utils.SaveFile(this,res.toString());
     }
+    //实现句子分析
     void SenAnalyze(){
-        Final.clear();
+        Final=new ArrayList<>();
         Result_Model.setRowCount(0);
         Result_Model.setColumnCount(0);
         String sentence=Sentence_Area.getText();
@@ -375,15 +435,16 @@ public class LR_Series extends JFrame implements ActionListener {
                     vector.add(opt);vector.add(String.valueOf(next));
                 }else if (opt.equals("acc")){
                     vector.add("接受，匹配成功");
+                    vector.add("");
                     exit=true;
                 }else if (col!=-1){
                     vector.add("失败，归约失败");
+                    vector.add("");
                     exit=true;
                 }
                 Final.add(vector);
                 if (exit)break;
             }
-
             String []str={"步骤","状态栈","符号栈","输入串","ACTION","GOTO"};
             for(String s:str){
                 Result_Model.addColumn(s);
@@ -395,6 +456,7 @@ public class LR_Series extends JFrame implements ActionListener {
             Save=new ArrayList<>(Final);
         }
     }
+    //一步显示
     void One_Show(){
         if (Final.isEmpty()){
             if (notice_str.equals("接受，匹配成功"))Utils.Notice(this,"分析完成，匹配成功");
@@ -405,6 +467,7 @@ public class LR_Series extends JFrame implements ActionListener {
             Final.remove(0);
         }
     }
+    //全部显示
     void Result_Show(){
         for (int i=0;i<Final.size();i++){
             Result_Model.addRow(Final.get(i));
@@ -416,6 +479,7 @@ public class LR_Series extends JFrame implements ActionListener {
             else Utils.Notice(this,"分析完成,非法的终结符");
         }
     }
+    //项目集规范族显示
     void Project_Show(){
         Project_Model.setRowCount(0);Project_Model.setColumnCount(0);
         Project_Model.addColumn("状态");Project_Model.addColumn("项目簇信息");
@@ -428,6 +492,7 @@ public class LR_Series extends JFrame implements ActionListener {
             Project_Model.addRow(vector);
         }
     }
+    //打开文件
     void Open_File(){
         String str=Utils.OpenFile(this);
         if (!str.isEmpty()){
@@ -436,14 +501,20 @@ public class LR_Series extends JFrame implements ActionListener {
         }
         else Utils.Notice(this,"输入文件数据为空");
     }
+    //保存文件
     void Save_File(){
         if (Input_Area.getText().equals(""))Utils.Notice(this,"输入串为空，无法保存");
         else Utils.SaveFile(this,Input_Area.getText());
     }
+    //验证是否为规定文法
     void Confirm(){
         if(Input_Area.getText().equals(""))Utils.Notice(this,"请输入文法");
-        else if (GrammarType!=-1){
-            StructItemCluster(GrammarType);
+        if (!Input_Area.getText().isEmpty()){
+            if (DataPreprocess(Input_Area.getText()))return;
+        }
+        //判断是否存在左递归
+        if (GrammarType!=-1){
+            StructItemCluster();
             Vn=Utils.GetVn(Node_List);
             V=Utils.GetV(Node_List);
             Vt=Utils.GetVt(Node_List);
@@ -454,6 +525,7 @@ public class LR_Series extends JFrame implements ActionListener {
             default:Utils.Notice(this,"请先选择LR分析类型");SelectGrammar();Confirm();break;
         }
     }
+    //判断是否为LR(0)文法
     void LR_0(){
         boolean is=true;
         for (ClusterNode node:Cluster_List){
@@ -471,12 +543,15 @@ public class LR_Series extends JFrame implements ActionListener {
         if (is){
             Utils.Notice(this,"是一个正确的LR(0)文法");
             struct_btn.setEnabled(true);
+            project_btn.setEnabled(true);
         }
         else {
             Utils.Notice(this,"是一个不正确的LR(0)文法");
             struct_btn.setEnabled(false);
+            project_btn.setEnabled(false);
         }
     }
+    //构造预测分析表
     void Struct_LR_0_Table(){
         Struct_Model.setRowCount(0);Struct_Model.setColumnCount(0);
         //使用该方法，证明不存在移进-归约冲突
@@ -537,8 +612,9 @@ public class LR_Series extends JFrame implements ActionListener {
         }
         ana_btn.setEnabled(true);
     }
+    //判断是否为SLR(1)文法
     void SLR_1(){
-        VtList.clear();
+        VtList=new HashMap<>();
         //求出归约项目的Follow集，通过LL_1类建造
         LL_1_Grammar ll1Grammar=new LL_1_Grammar(Input_Area.getText());
         FollowMap=ll1Grammar.FollowMap;
@@ -584,85 +660,21 @@ public class LR_Series extends JFrame implements ActionListener {
                 }
             }
         }
-        if (is){
-            Utils.Notice(this,"是一个正确的SLR(1)文法");
-            struct_btn.setEnabled(true);
-        }
-        else {
-            Utils.Notice(this,"是一个不正确的SLR(1)文法");
-            struct_btn.setEnabled(false);
+        if (!Semantic){
+            if (is){
+                Utils.Notice(this,"是一个正确的SLR(1)文法");
+                struct_btn.setEnabled(true);
+                project_btn.setEnabled(true);
+            }
+            else {
+                Utils.Notice(this,"是一个不正确的SLR(1)文法");
+                struct_btn.setEnabled(false);
+                project_btn.setEnabled(false);
+            }
         }
     }
+    //构造SLR(1)预测分析表
     void Struct_SLR_1_Table(){
-//        Struct_Model.setRowCount(0);Struct_Model.setColumnCount(0);
-//        //使用该方法，证明不存在移进-归约冲突
-//        //初始化列数据
-//        //
-//        Struct_Model.addColumn("状态");
-//        for (String vt:Vt)Struct_Model.addColumn(vt);
-//        Struct_Model.addColumn("#");
-//        for (int i=1;i<Vn.size();i++)Struct_Model.addColumn(Vn.get(i));//建立完毕
-//        for (ClusterNode node : Cluster_List) {//遍历状态，添加行
-//            Vector<String>vector=new Vector<>();
-//            vector.add(String.valueOf(node.S));
-//            if (Conflict.contains(node.S)){//归约
-//                //归约项目、存在冲突
-//                //对于每个字符进行分析
-//                for(String vt:Vt){
-//                    char ch=vt.charAt(0);
-//                    boolean red=true;
-//                    //判断属于哪一个集合
-//                    if (VtList.get(node.S)!=null&&VtList.get(node.S).contains(ch)){//在终结符中,进行移进操作
-//                        ArrayList<LLNode> tmp=GOTO(node.cluster, vt.charAt(0));
-//                        for (int i=0;i<Cluster_List.size();i++){
-//                            if (Cluster2String(tmp).equals(Cluster2String(Cluster_List.get(i).cluster))){
-//                                vector.add("S"+i);
-//                                red=false;
-//                            }
-//                        }
-//                    }
-//                    else {//使用归约
-//                        //判断属于哪个follow集合
-//                        Map<Integer,ArrayList<Character>>Tmp=VnFollowList.get(node.S);
-//                        for (Map.Entry<Integer, ArrayList<Character>> entry:Tmp.entrySet()){
-//                            if(entry.getValue().contains(ch)){
-//                                vector.add("r"+entry.getKey());
-//                                red=false;
-//                            }
-//                        }
-//                    }
-//                    if (red){//都不存在
-//                        vector.add("");
-//                    }
-//                }
-//            }
-//            else{//移进
-//                for (String vt:Vt){   // 终结符
-//                    ArrayList<LLNode> tmp=GOTO(node.cluster, vt.charAt(0));
-//                    if (tmp.isEmpty())vector.add("");
-//                    else{
-//                        for (int i=0;i<Cluster_List.size();i++){
-//                            if (Cluster2String(tmp).equals(Cluster2String(Cluster_List.get(i).cluster))){
-//                                vector.add("S"+i);
-//                            }
-//                        }
-//                    }
-//                }
-//                //非终结符
-//                for (String vn:Vn){
-//                    ArrayList<LLNode> tmp=GOTO(node.cluster, vn.charAt(0));
-//                    if (tmp.isEmpty())vector.add("");
-//                    else{
-//                        for (int i=0;i<Cluster_List.size();i++){
-//                            if (Cluster2String(tmp).equals(Cluster2String(Cluster_List.get(i).cluster))){
-//                                vector.add(String.valueOf(i));
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//            Struct_Model.addRow(vector);
-//        }
         //直接调用Struct_LR_0_Table
         Struct_LR_0_Table();
         //对存在冲突的归约进行修改
@@ -670,7 +682,6 @@ public class LR_Series extends JFrame implements ActionListener {
         LL_1_Grammar ll1Grammar=new LL_1_Grammar(Input_Area.getText());
         for (ClusterNode node:Cluster_List){//该状态存在冲突
             if (Conflict.contains(node.S)){
-                System.out.println(node.S);
                 //对每一列进行修改
                 for (String vt:Vt){
                     int row=node.S;
@@ -709,8 +720,9 @@ public class LR_Series extends JFrame implements ActionListener {
         }
         ana_btn.setEnabled(true);
     }
-    LRNode LRClosure(ArrayList<LLNode>list,ArrayList<ArrayList<Character>>follow,LL_1_Grammar grammar){//集合以及序号。
-        //遍历数组，如果.的后面是非终结符，就将终结符的以.开头的加入
+    //准备用来构造LR(1)项目集规范族
+    LRNode LRClosure(ArrayList<LLNode>list,ArrayList<ArrayList<Character>>follow,LL_1_Grammar grammar){
+        //集合以及序号。遍历数组，如果.的后面是非终结符，就将终结符的以.开头的加入
         ArrayList<LLNode>result=new ArrayList<>(list);
         Queue<LLNode> queue=new LinkedList<>(list);
         Queue<ArrayList<Character>> queue_follow=new LinkedList<>(follow);
@@ -750,7 +762,8 @@ public class LR_Series extends JFrame implements ActionListener {
         LRNode ret=new LRNode(result,follow);
         return ret;
     }
-    void StructItemCluster(int GrammarType){
+    //构造项目集规范族
+    void StructItemCluster(){
         Node_List=GetNodeList(Input_Area.getText());//拓广文法
         Item_List.clear();
         Cluster_List.clear();
@@ -761,26 +774,6 @@ public class LR_Series extends JFrame implements ActionListener {
                 Item_List.add(new LLNode(node.Vn, node.V.substring(0,i)+"."+node.V.substring(i,len)));
             }
             Item_List.add(new LLNode(node.Vn,node.V+"."));
-        }
-        if (GrammarType==2||GrammarType==3){
-            LL_1_Grammar grammar=new LL_1_Grammar(Input_Area.getText());
-            //如何实现后面跟follow集，
-            //初始的集合
-            ArrayList<ArrayList<Character>>tmp=new ArrayList<>();
-            ArrayList<Character> one=new ArrayList<>();
-            ArrayList<LLNode>t=new ArrayList<>();
-            one.add(end);
-            tmp.add(one);
-            t.add(Item_List.get(0));//初始集
-            LRNode node=LRClosure(t,tmp,grammar);
-            for (ArrayList<Character> chs:node.follow){
-                System.out.println(chs);
-            }
-            for (LLNode nodes:node.list){
-                System.out.println(nodes.Vn+"->"+nodes.V);
-            }
-            //本质上就是要狗仔出first(follow)即可，并使其对应即可，GOTO不更换
-            return;
         }
         //构造第一个cluster
         int index=0;
@@ -806,6 +799,7 @@ public class LR_Series extends JFrame implements ActionListener {
         }
         project_btn.setEnabled(true);
     }
+    //element是否在source中
     boolean isContain(ArrayList<ClusterNode>source,ClusterNode element){
         for (ClusterNode node:source){
             if (Cluster2String(node.cluster).equals(Cluster2String(element.cluster))){
@@ -814,6 +808,7 @@ public class LR_Series extends JFrame implements ActionListener {
         }
         return false;
     }
+    //闭包运算
     ArrayList<LLNode> Closure(ArrayList<LLNode> list){
         //遍历数组，如果.的后面是非终结符，就将终结符的以.开头的加入
         ArrayList<LLNode>result=new ArrayList<>(list);
@@ -839,12 +834,14 @@ public class LR_Series extends JFrame implements ActionListener {
         }
         return result;
     }
+    //将项目集转化成字符串方便打印和判断是否相等
     String Cluster2String(ArrayList<LLNode>source){
         StringBuilder stringBuilder=new StringBuilder();
         for (LLNode node:source)
             stringBuilder.append(node.Vn).append("->").append(node.V).append("  ");
         return stringBuilder.toString();
     }
+    //获取文法，改造成对应的存储结构
     ArrayList<LLNode> GetNodeList(String source){
         String[]strings=source.split("\n");
         String str="E'->"+strings[0].split("->")[0]+"\n"+source;
@@ -861,6 +858,7 @@ public class LR_Series extends JFrame implements ActionListener {
 
         return result;
     }
+    //GOTO函数，获取下一个项目集
     ArrayList<LLNode> GOTO(ArrayList<LLNode> source,char receive){
         ArrayList<LLNode>next=new ArrayList<>();
         for (LLNode node:source){
@@ -875,6 +873,7 @@ public class LR_Series extends JFrame implements ActionListener {
         }
         return Closure(next);
     }
+    //获取所有的接受符号
     ArrayList<Character> GetChar(ArrayList<LLNode>source){
         ArrayList<Character>res=new ArrayList<>();
         for (LLNode node:source){
@@ -886,12 +885,14 @@ public class LR_Series extends JFrame implements ActionListener {
         }
         return res;
     }
+    //element是否在source中
     boolean isContainer(ArrayList<LLNode>source, LLNode element){
         for (LLNode node:source){
             if (node.Vn.equals(element.Vn)&&node.V.equals(element.V))return false;
         }
         return true;
     }
+    //选择文法LR(0)/SLR(1)
     void SelectGrammar(){
         int index=JOptionPane.showOptionDialog(this,"请选择对应的文法","选择文法",JOptionPane.DEFAULT_OPTION,
                 JOptionPane.QUESTION_MESSAGE,null,new String[]{"LR(0)","SLR(1)"},-1);
@@ -905,6 +906,7 @@ public class LR_Series extends JFrame implements ActionListener {
         }
         GrammarType=index;
     }
+    //修改提示文本
     void Modify(String str){
         this.setTitle("LR自底向上分析(Series)  当前为："+str);
         jLabel7.setText(str+"分析表");
@@ -912,6 +914,7 @@ public class LR_Series extends JFrame implements ActionListener {
         if (str.equals("")) jLabel2.setText("注意事项:请输入满足LR(Series)最简判别的2型文法。一行一个产生式");
         else jLabel2.setText("注意事项:请输入满足"+str+"最简判别的2型文法。一行一个产生式");
     }
+    //设置按钮可用性
     void ComponentControl(){
         project_btn.setEnabled(false);
         select_btn.setEnabled(true);

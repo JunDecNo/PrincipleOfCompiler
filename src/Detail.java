@@ -26,7 +26,7 @@ public class Detail extends javax.swing.JFrame{
         Date = new javax.swing.JLabel();
         Link = new javax.swing.JLabel();
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
         jLabel6.setFont(new java.awt.Font("Microsoft YaHei UI", 1, 24)); // NOI18N
         jLabel6.setText("编译原理实验窗口");

@@ -328,7 +328,7 @@ public class LL_1_Grammar extends JFrame implements ActionListener {
     }// </editor-fold>
     //布局结束
     //方法设置
-    void Save_Ana(){
+    void Save_Ana(){//保存分析结果
         StringBuilder res= new StringBuilder();
         res.append("----------------------------LL(1)文法-----------------------------------\n");
         for (LLNode node:Node_List){
@@ -354,7 +354,7 @@ public class LL_1_Grammar extends JFrame implements ActionListener {
         else if(notice_str.contains("不匹配"))res.append("分析完成,终结符匹配不成功");
         Utils.SaveFile(this,res.toString());
     }
-    void Open_File(){
+    void Open_File(){//打开文件
         String str=Utils.OpenFile(this);
         if (!str.isEmpty()){
             DataPreprocess(str);
@@ -362,7 +362,7 @@ public class LL_1_Grammar extends JFrame implements ActionListener {
         }
         else Utils.Notice(this,"输入文件数据为空");
     }
-    void Save_File(){
+    void Save_File(){//保存文法文件
         if (Input_Area.getText().equals(""))Utils.Notice(this,"输入串为空，无法保存");
         else Utils.SaveFile(this,Input_Area.getText());
     }
@@ -446,12 +446,12 @@ public class LL_1_Grammar extends JFrame implements ActionListener {
             Save=new ArrayList<>(Final);
         }
     }
-    String list2str(ArrayList<Character>source){
+    String list2str(ArrayList<Character>source){//将字符可变数组转化为字符串
         StringBuilder str= new StringBuilder();
         for (char ch:source) str.append(ch);
         return str.toString();
     }
-    void One_Show(){
+    void One_Show(){//一部显示
         if (Final.isEmpty()){
             if (notice_str.equals("接受"))Utils.Notice(this,"分析完成，匹配成功");
             else if(notice_str.equals("未找到产生式"))Utils.Notice(this,"分析完成,未找到产生式");
@@ -461,7 +461,7 @@ public class LL_1_Grammar extends JFrame implements ActionListener {
             Final.remove(0);
         }
     }
-    void Result_Show(){
+    void Result_Show(){//全部显示
         for (int i=0;i<Final.size();i++){
             Result_Model.addRow(Final.get(i));
             Final.remove(i);i--;
@@ -473,7 +473,8 @@ public class LL_1_Grammar extends JFrame implements ActionListener {
         }
     }
     //show first collection
-    void First_Show(){
+    void First_Show(){//firsth集合显示
+        First();
         first_table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         First_Model.setRowCount(0);
         First_Model.setColumnCount(0);//全部清空
@@ -496,7 +497,8 @@ public class LL_1_Grammar extends JFrame implements ActionListener {
             First_Model.addRow(vector);
         }
     }
-    void Follow_Show(){
+    void Follow_Show(){//follow集合显示
+        Follow();
         follow_table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         Follow_Model.setRowCount(0);
         Follow_Model.setColumnCount(0);//全部清空
@@ -520,7 +522,7 @@ public class LL_1_Grammar extends JFrame implements ActionListener {
             Follow_Model.addRow(vector);
         }
     }
-    void Predict_Show(){
+    void Predict_Show(){//预测分析表显示
         predict_table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         Predict_Model.setRowCount(0);
         Predict_Model.setColumnCount(0);//全部清空
@@ -756,7 +758,7 @@ public class LL_1_Grammar extends JFrame implements ActionListener {
             ana_btn.setEnabled(true);
         }
     }
-    int isExistLeftRecursive(){
+    int isExistLeftRecursive(){//判断是否存在左递归
         ArrayList<LLNode> tmp=new ArrayList<>(Node_List);
         for (LLNode node_i:Node_List){
             if (node_i.Vn.equals(node_i.V.substring(0,1)))return 1;
@@ -769,7 +771,7 @@ public class LL_1_Grammar extends JFrame implements ActionListener {
         }
         return 0;
     }
-    boolean isExistSame(ArrayList<Character>input){
+    boolean isExistSame(ArrayList<Character>input){//是否存在相同元素，判断是否存在交集
         for (int i=0;i<input.size();i++){
             for (int j=0;j<i;j++){
                 if (input.get(j)==input.get(i))return true;
@@ -777,7 +779,7 @@ public class LL_1_Grammar extends JFrame implements ActionListener {
         }
         return false;
     }
-    ArrayList<Character>Set(ArrayList<Character>source){
+    ArrayList<Character>Set(ArrayList<Character>source){//删除重复元素
         ArrayList<Character>res=new ArrayList<>();
         for (Character ch:source){
             if (!res.contains(ch))res.add(ch);
@@ -855,14 +857,15 @@ public class LL_1_Grammar extends JFrame implements ActionListener {
         return true;
     }
     void ComponentControl(){
-        first_btn.setEnabled(false);
-        follow_btn.setEnabled(false);
+        first_btn.setEnabled(true);
+        follow_btn.setEnabled(true);
         predict_btn.setEnabled(false);
         ana_btn.setEnabled(false);
         oneDis_btn.setEnabled(false);
         allDis_btn.setEnabled(false);
         save_ana_btn.setEnabled(false);
     }
+    //数据预处理
     boolean DataPreprocess(String str){//数据预处理,提高程序的健壮性
         str = str.replace("\40","");
         String[]strings=str.split("\n");

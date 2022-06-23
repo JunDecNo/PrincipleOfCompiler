@@ -2,6 +2,12 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.util.ArrayList;
+import java.util.Stack;
+import java.util.Vector;
+
 public class SemanticAnalysis extends JFrame implements ActionListener {
     public SemanticAnalysis() {
         initComponents();
@@ -11,7 +17,6 @@ public class SemanticAnalysis extends JFrame implements ActionListener {
     }
     private JButton Reset;
     private JButton allDis;
-    private ButtonGroup buttonGroup1;
     private JButton create;
     private JLabel jLabel1;
     private JLabel jLabel2;
@@ -29,6 +34,225 @@ public class SemanticAnalysis extends JFrame implements ActionListener {
     private JButton save;
     private JButton start;
     private DefaultTableModel AnaLysisModel,MidModel;
+    private ArrayList<Vector<String>>Display=new ArrayList<>();//用来保存分析结果集合。
+    private Stack<Double> Semantic=new Stack<>();
+    private Stack<String> MidStack=new Stack<>();
+    private int Address,TempIndex;
+    private ArrayList<Vector<String>>MidList=new ArrayList<>();
+    private String result;
+    //方法设置
+    void create(){
+        for (Vector<String> vector:MidList){
+            MidModel.addRow(vector);
+        }
+        create.setEnabled(false);
+    }
+    void save(){
+        StringBuilder string=new StringBuilder();
+        string.append("---------------------中间代码---------------------\n");
+        string.append("步骤\t\t\t运算符\t\t数据1\t\t数据2\t\t结果\n");
+        for (Vector<String>vector:MidList){
+            string.append(vector.get(0)).append("\t\t\t");
+            string.append(vector.get(1)).append("\t\t\t");
+            string.append(vector.get(2)).append("\t\t\t");
+            string.append(vector.get(3)).append("\t\t\t");
+            string.append(vector.get(4)).append("\n");
+        }
+        string.append("分析结果: ").append(
+                AnaLysisModel.getValueAt(AnaLysisModel.getRowCount()-1,AnaLysisModel.getColumnCount()-2));
+        string.append("\n分析值: ").append(result);
+        Utils.SaveFile(this,string.toString());
+    }
+    void reset(){
+        jTextField.setText("");
+        AnaLysisModel.setRowCount(0);
+        MidModel.setRowCount(0);
+    }
+    void oneDis(){
+        if (!Display.isEmpty()) AnaLysisModel.addRow(Display.get(0));
+        Display.remove(0);
+    }
+    void allDis(){
+        for (int i=0;i<Display.size();i++){
+            AnaLysisModel.addRow(Display.get(i));
+            Display.remove(i);i--;
+        }
+    }
+    void start(){
+        Address=0;TempIndex=0;
+        Semantic.clear();
+        MidStack.clear();
+        MidList.clear();
+        AnaLysisModel.setRowCount(0);
+        MidModel.setRowCount(0);
+        if (!isLegal(jTextField.getText())){
+            Utils.Notice(this,"输入字符存在不合法字符");return;
+        }
+        if (jTextField.getText().isEmpty()){
+            Utils.Notice(this,"请输入算术表达式");
+            return;
+        }
+        //匹配串
+        String string=jTextField.getText().replaceAll("([0-9]*[.])?[0-9]+","i");
+        //获取数字
+        String []number=jTextField.getText().split("[+|[-]|*|/|%|^|\\(|\\)]");
+        LR_Series lr=new LR_Series();
+        lr.Semantic=true;
+        lr.GrammarType=1;
+        lr.Input_Area.setText("E->E+T|E-T|T|-T\nT->T*F|T/F|T%F|F\nF->F^M|M\nM->(E)|i");
+        //                          1  2  3  4      5   6   7   8     9  10     11 12
+        lr.Confirm();lr.Project_Show();lr.Struct();lr.Sentence_Area.setText(string);
+        lr.SenAnalyze();
+        for (Vector<String>vector:lr.Final){
+            Vector<String>rows=new Vector<>();
+            Vector<String>MidRows=new Vector<>();
+            rows.add(vector.get(0));rows.add(vector.get(1));
+            //第三列
+            if(vector.get(2).contains("i")){
+                for (String value : number) {
+                    if (!value.equals("")) {
+                        rows.add(vector.get(2).replaceAll("i", value));
+                        break;
+                    }
+                }
+            }
+            else rows.add(vector.get(2));
+            //第四列
+            String str=vector.get(3);
+            int s;
+            if (vector.get(2).contains("i"))s=1;
+            else s=0;
+            for (int i=s;i<number.length;i++){
+                if (number[i].equals(""))continue;
+                str=str.replaceFirst("i",number[i]);
+            }
+            rows.add(str);
+            rows.add(vector.get(4));
+            //改变第五列显示
+            String option=vector.get(4);
+            double right,left;
+            String leftTemp,rightTemp,resultTemp;
+            switch (option){//语义
+                case "r1":
+                    right=Semantic.pop();left=Semantic.pop();//运算
+                    rightTemp=MidStack.pop();leftTemp=MidStack.pop();resultTemp=GetTemp();//代码
+                    Semantic.push(left+right);
+                    MidStack.push(resultTemp);
+                    //中间代码语义
+                    MidRows.add(GetAddress());MidRows.add("ADD");
+                    MidRows.add(leftTemp);MidRows.add(rightTemp);MidRows.add(resultTemp);
+                    break;//+
+                case "r2":
+                    right=Semantic.pop();left=Semantic.pop();//运算
+                    rightTemp=MidStack.pop();leftTemp=MidStack.pop();resultTemp=GetTemp();//代码
+                    Semantic.push(left-right);
+                    MidStack.push(resultTemp);
+                    //中间代码语义
+                    MidRows.add(GetAddress());MidRows.add("SUB");
+                    MidRows.add(leftTemp);MidRows.add(rightTemp);MidRows.add(resultTemp);
+                    break;//-
+                case "r4":
+                    right=Semantic.pop();rightTemp=MidStack.pop();resultTemp=GetTemp();
+                    Semantic.push(-right);
+                    MidStack.push(resultTemp);
+                    //中间代码语义
+                    MidRows.add(GetAddress());MidRows.add("MUS");
+                    MidRows.add(rightTemp);MidRows.add("_");MidRows.add(resultTemp);
+                    break;//-T
+                case "r5":
+                    right=Semantic.pop();left=Semantic.pop();//运算
+                    rightTemp=MidStack.pop();leftTemp=MidStack.pop();resultTemp=GetTemp();//代码
+                    Semantic.push(left*right);
+                    MidStack.push(resultTemp);
+                    //中间代码语义
+                    MidRows.add(GetAddress());MidRows.add("MUL");
+                    MidRows.add(leftTemp);MidRows.add(rightTemp);MidRows.add(resultTemp);
+                    break;//*
+                case "r6":
+                    right=Semantic.pop();left=Semantic.pop();//运算
+                    rightTemp=MidStack.pop();leftTemp=MidStack.pop();resultTemp=GetTemp();//代码
+                    Semantic.push(left/right);
+                    MidStack.push(resultTemp);
+                    //中间代码语义
+                    MidRows.add(GetAddress());MidRows.add("DIV");
+                    MidRows.add(leftTemp);MidRows.add(rightTemp);MidRows.add(resultTemp);
+                    //中间代码语义
+                    break;///
+                case "r7":
+                    right=Semantic.pop();left=Semantic.pop();//运算
+                    rightTemp=MidStack.pop();leftTemp=MidStack.pop();resultTemp=GetTemp();//代码
+                    Semantic.push(left%right);
+                    MidStack.push(resultTemp);
+                    //中间代码语义
+                    MidRows.add(GetAddress());MidRows.add("MOD");
+                    MidRows.add(leftTemp);MidRows.add(rightTemp);MidRows.add(resultTemp);
+                    break;//%
+                case "r9":
+                    right=Semantic.pop();left=Semantic.pop();//运算
+                    rightTemp=MidStack.pop();leftTemp=MidStack.pop();resultTemp=GetTemp();//代码
+                    Semantic.push(Math.pow(left,right));
+                    MidStack.push(resultTemp);
+                    //中间代码语义
+                    MidRows.add(GetAddress());MidRows.add("POW");
+                    MidRows.add(leftTemp);MidRows.add(rightTemp);MidRows.add(resultTemp);
+                    break;//^
+                case "r12":
+                    resultTemp=GetTemp();
+                    Semantic.push(Double.parseDouble(number[GetFirst(number)]));
+                    //中间代码语义
+                    MidStack.push(resultTemp);
+                    MidRows.add(GetAddress());
+                    MidRows.add(":=");
+                    MidRows.add(String.valueOf(Semantic.peek()));
+                    MidRows.add("_");MidRows.add(resultTemp);
+                    break;//移进
+            }
+            rows.add(GetStack());
+            Display.add(rows);
+            if (vector.get(4).contains("r12"))number[GetFirst(number)]="";
+            if (MidRows.size()==5)MidList.add(MidRows);
+        }
+        result= String.valueOf(Semantic.pop());
+        Utils.Notice(this,"计算结果为："+result);
+        ButtonControl(true);
+    }
+    String GetStack(){
+        StringBuilder stringBuilder=new StringBuilder();
+        Stack<Double> temp = new Stack<>();
+        stringBuilder.append("-");
+        while (!Semantic.isEmpty())temp.push(Semantic.pop());
+        while (!temp.isEmpty()){
+            stringBuilder.append(temp.peek());
+            stringBuilder.append("-");
+            Semantic.push(temp.pop());
+        }
+        return stringBuilder.toString();
+    }
+    int GetFirst(String[]number){
+        for (int i=0;i<number.length;i++)
+            if (!number[i].equals(""))return i;
+            return -1;
+    }
+    String GetTemp(){
+        TempIndex++;
+        return "T"+TempIndex;
+    }
+    String GetAddress(){
+        Address++;
+        return "("+Address+")";
+    }
+    boolean isLegal(String str){
+        for (char ch:str.toCharArray())
+            if (!((ch>='0'&&ch<='9')||(ch=='('||ch==')'||ch=='+'||ch=='-'||ch=='*'||ch=='/'||ch=='%'||ch=='^'||ch=='.')))
+                return false;
+        return true;
+    }
+    void ButtonControl(boolean option){
+        oneDis.setEnabled(option);
+        allDis.setEnabled(option);
+        save.setEnabled(option);
+    }
+    //结束
     private void initComponents() {
         AnaLysisModel=new DefaultTableModel();
         MidModel=new DefaultTableModel();
@@ -38,7 +262,6 @@ public class SemanticAnalysis extends JFrame implements ActionListener {
         MidModel=Utils.SetColumnName(MidModel,new String [] {
                 "步骤", "运算符", "data_1", "data_2", "result"
         });
-        buttonGroup1 = new ButtonGroup();
         jLabel1 = new JLabel();
         jLabel2 = new JLabel();
         jTextField = new JTextField();
@@ -153,14 +376,34 @@ public class SemanticAnalysis extends JFrame implements ActionListener {
         );
 
         pack();
+        AddListener();
     }
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource()==create);
-        else if (e.getSource()==save);
-        else if (e.getSource()==Reset);
-        else if (e.getSource()==oneDis);
-        else if (e.getSource()==allDis);
-        else if (e.getSource()==start);
+        if (e.getSource()==create)create();
+        else if (e.getSource()==save)save();
+        else if (e.getSource()==Reset)reset();
+        else if (e.getSource()==oneDis)oneDis();
+        else if (e.getSource()==allDis)allDis();
+        else if (e.getSource()==start)start();
+    }
+    void AddListener(){
+        create.addActionListener(this);
+        save.addActionListener(this);
+        Reset.addActionListener(this);
+        oneDis.addActionListener(this);
+        allDis.addActionListener(this);
+        start.addActionListener(this);
+        jTextField.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                ButtonControl(false);
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+
+            }
+        });
     }
 }

@@ -544,7 +544,7 @@ public class MainFrame extends JFrame implements ActionListener {
     }
 
     private void Detail() {
-
+        new Detail().setVisible(true);
     }
 
     private void Set_Text() {
