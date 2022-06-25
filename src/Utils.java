@@ -178,6 +178,15 @@ public class Utils {
         gra.drawImage(image,0,0,null);
         return targetImg;
     }
+    static void SetAreaTheme(JTextArea jTextArea){
+
+    }
+    static void SetFieldTheme(JTextField jTextField){
+
+    }
+    static void SetTableTheme(JTable jTable){
+
+    }
 }
 class MidNode{
     public int row_number;

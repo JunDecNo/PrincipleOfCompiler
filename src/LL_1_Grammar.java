@@ -538,12 +538,14 @@ public class LL_1_Grammar extends JFrame implements ActionListener {
             for (int i=1;i<Follow_Model.getColumnCount();i++){//每一行
                 boolean isnull=true;
                 char ch=Follow_Model.getColumnName(i).charAt(0);//终结符
+                StringBuilder stringBuilder=new StringBuilder();//每一个表项
                 for (LLNode node:Node_List){
                     if (node.Vn.equals(vn)&&SelectMap.get(node.Vn+"->"+node.V).contains(ch)){
-                        vector.add("->"+node.V);isnull=false;break;
+                        stringBuilder.append("->"+node.V).append("  ");isnull=false;
                     }
                 }
                 if (isnull)vector.add("");
+                else vector.add(stringBuilder.toString());
             }
             Predict_Model.addRow(vector);
         }
@@ -749,6 +751,7 @@ public class LL_1_Grammar extends JFrame implements ActionListener {
         }
         if (isSame){
             Utils.Notice(this,"SELECT集存在交集，不是LL(1)文法");
+            predict_btn.setEnabled(true);
         }
         else{
             Utils.Notice(this,"是正确的LL(1)文法");
@@ -759,7 +762,6 @@ public class LL_1_Grammar extends JFrame implements ActionListener {
         }
     }
     int isExistLeftRecursive(){//判断是否存在左递归
-        ArrayList<LLNode> tmp=new ArrayList<>(Node_List);
         for (LLNode node_i:Node_List){
             if (node_i.Vn.equals(node_i.V.substring(0,1)))return 1;
             for (LLNode node_j:Node_List){

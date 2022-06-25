@@ -420,7 +420,8 @@ public class LR_Series extends JFrame implements ActionListener {
                     chars.remove(0);//删除第一个
                 }else if (opt.startsWith("r")){//进行归约操作
                     //选择产生式
-                    LLNode node=Node_List.get(Integer.parseInt(opt.substring(1)));
+                    String t=opt.substring(1,opt.length()-1);
+                    LLNode node=Node_List.get(Integer.parseInt(t));
                     int right=node.V.length();
                     //从状态栈和符号栈中删除right个
                     for(int j = 0;j<right;j++){
@@ -547,8 +548,8 @@ public class LR_Series extends JFrame implements ActionListener {
         }
         else {
             Utils.Notice(this,"是一个不正确的LR(0)文法");
-            struct_btn.setEnabled(false);
-            project_btn.setEnabled(false);
+            struct_btn.setEnabled(true);
+            project_btn.setEnabled(true);
         }
     }
     //构造预测分析表
@@ -564,21 +565,54 @@ public class LR_Series extends JFrame implements ActionListener {
         for (ClusterNode node : Cluster_List) {//遍历状态，添加行
             Vector<String>vector=new Vector<>();
             vector.add(String.valueOf(node.S));
+            //判断是否存在冲突
+            int reduce=0,shift=0;
+            boolean isExist=false;
+            for (LLNode n:node.cluster){
+                int unitPos=n.V.indexOf(dot),len=n.V.length();
+                if (unitPos==len-1)reduce++;
+                else shift++;
+            }
             //获取接受字符串
             int pos=node.cluster.get(0).V.indexOf(dot);
-            if (pos == node.cluster.get(0).V.length() - 1){//归约
-                LLNode get=new LLNode(node.cluster.get(0));
-                get.V=get.V.substring(0,get.V.length()-1);
-                if (get.Vn.equals("E'")){//接受项目
+            if (reduce>0){//归约
+                if (node.cluster.get(0).Vn.equals("E'")){//接受项目
                     for (String vt:Vt)vector.add("");
                     vector.add("acc");
                 }else{//归约项目
-                    for (int i=0;i<Node_List.size();i++){
-                        if (Node_List.get(i).Vn.equals(get.Vn)&&Node_List.get(i).V.equals(get.V)){
-                            for (String vt:Vt)vector.add("r"+i);
-                            vector.add("r"+i);
+                    StringBuilder rAll=new StringBuilder();
+                    for (String vt:Vt){
+                        StringBuilder item = new StringBuilder();
+                        for (LLNode n:node.cluster){
+                            if (n.V.length()-1==n.V.indexOf(dot)){//归约项目
+                                for (int i=0;i<Node_List.size();i++){
+                                    if (Node_List.get(i).Vn.equals(n.Vn)&&Node_List.get(i).V.equals(n.V.substring(0,n.V.length()-1))){
+                                        item.append("r").append(i).append(" ");
+                                    }
+                                }
+                            }else{//移进项目
+                                ArrayList<LLNode> tmp=GOTO(node.cluster, vt.charAt(0));
+                                if (!tmp.isEmpty()){
+                                    for (int i=0;i<rows;i++){
+                                        if (Cluster2String(tmp).equals(Project_Model.getValueAt(i,1))){
+                                            item.append("S").append(i).append(" ");
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        vector.add(item.toString());
+                    }
+                    for (LLNode n:node.cluster){
+                        if (n.V.length()-1==n.V.indexOf(dot)){//归约项目
+                            for (int i=0;i<Node_List.size();i++){
+                                if (Node_List.get(i).Vn.equals(n.Vn)&&Node_List.get(i).V.equals(n.V.substring(0,n.V.length()-1))){
+                                    rAll.append("r").append(i).append(" ");
+                                }
+                            }
                         }
                     }
+                    vector.add(rAll.toString());
                 }
             }
             else{//移进
@@ -668,8 +702,8 @@ public class LR_Series extends JFrame implements ActionListener {
             }
             else {
                 Utils.Notice(this,"是一个不正确的SLR(1)文法");
-                struct_btn.setEnabled(false);
-                project_btn.setEnabled(false);
+                struct_btn.setEnabled(true);
+                project_btn.setEnabled(true);
             }
         }
     }
@@ -679,7 +713,6 @@ public class LR_Series extends JFrame implements ActionListener {
         Struct_LR_0_Table();
         //对存在冲突的归约进行修改
         int rows=Project_Model.getRowCount();
-        LL_1_Grammar ll1Grammar=new LL_1_Grammar(Input_Area.getText());
         for (ClusterNode node:Cluster_List){//该状态存在冲突
             if (Conflict.contains(node.S)){
                 //对每一列进行修改

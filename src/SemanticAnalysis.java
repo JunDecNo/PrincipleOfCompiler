@@ -12,33 +12,19 @@ public class SemanticAnalysis extends JFrame implements ActionListener {
     public SemanticAnalysis() {
         initComponents();
     }
-    public static void main(String args[]) {
-        new SemanticAnalysis().setVisible(true);
-    }
     private JButton Reset;
     private JButton allDis;
     private JButton create;
-    private JLabel jLabel1;
-    private JLabel jLabel2;
-    private JLabel jLabel3;
-    private JLabel jLabel4;
-    private JScrollPane jScrollPane1;
-    private JScrollPane jScrollPane2;
-    private JSeparator jSeparator1;
-    private JSeparator jSeparator2;
-    private JSeparator jSeparator3;
-    private JTable jTable1;
-    private JTable jTable2;
     private JTextField jTextField;
     private JButton oneDis;
     private JButton save;
     private JButton start;
     private DefaultTableModel AnaLysisModel,MidModel;
-    private ArrayList<Vector<String>>Display=new ArrayList<>();//用来保存分析结果集合。
-    private Stack<Double> Semantic=new Stack<>();
-    private Stack<String> MidStack=new Stack<>();
+    private final ArrayList<Vector<String>>Display=new ArrayList<>();//用来保存分析结果集合。
+    private final Stack<Double> Semantic=new Stack<>();
+    private final Stack<String> MidStack=new Stack<>();
     private int Address,TempIndex;
-    private ArrayList<Vector<String>>MidList=new ArrayList<>();
+    private final ArrayList<Vector<String>>MidList=new ArrayList<>();
     private String result;
     //方法设置
     void create(){
@@ -96,12 +82,10 @@ public class SemanticAnalysis extends JFrame implements ActionListener {
         String string=jTextField.getText().replaceAll("([0-9]*[.])?[0-9]+","i");
         //获取数字
         String []number=jTextField.getText().split("[+|[-]|*|/|%|^|\\(|\\)]");
-        LR_Series lr=new LR_Series();
-        lr.Semantic=true;
-        lr.GrammarType=1;
-        lr.Input_Area.setText("E->E+T|E-T|T|-T\nT->T*F|T/F|T%F|F\nF->F^M|M\nM->(E)|i");
+        SLR lr=new SLR("E->E+T|E-T|T|-T\nT->T*F|T/F|T%F|F\nF->F^M|M\nM->(E)|i");
         //                          1  2  3  4      5   6   7   8     9  10     11 12
-        lr.Confirm();lr.Project_Show();lr.Struct();lr.Sentence_Area.setText(string);
+        lr.Semantic=true;
+        lr.SetSentence(string);
         lr.SenAnalyze();
         for (Vector<String>vector:lr.Final){
             Vector<String>rows=new Vector<>();
@@ -250,36 +234,36 @@ public class SemanticAnalysis extends JFrame implements ActionListener {
     void ButtonControl(boolean option){
         oneDis.setEnabled(option);
         allDis.setEnabled(option);
-        save.setEnabled(option);
+        create.setEnabled(option);
     }
     //结束
     private void initComponents() {
         AnaLysisModel=new DefaultTableModel();
         MidModel=new DefaultTableModel();
-        AnaLysisModel=Utils.SetColumnName(AnaLysisModel,new String [] {
+        Utils.SetColumnName(AnaLysisModel, new String[]{
                 "步骤", "状态栈", "符号栈", "剩余输入串", "动作", "语义栈"
         });
-        MidModel=Utils.SetColumnName(MidModel,new String [] {
+        Utils.SetColumnName(MidModel, new String[]{
                 "步骤", "运算符", "data_1", "data_2", "result"
         });
-        jLabel1 = new JLabel();
-        jLabel2 = new JLabel();
+        JLabel jLabel1 = new JLabel();
+        JLabel jLabel2 = new JLabel();
         jTextField = new JTextField();
         Reset = new JButton();
-        jLabel3 = new JLabel();
-        jSeparator1 = new JSeparator();
-        jLabel4 = new JLabel();
+        JLabel jLabel3 = new JLabel();
+        JSeparator jSeparator1 = new JSeparator();
+        JLabel jLabel4 = new JLabel();
         create = new JButton();
         save = new JButton();
-        jScrollPane2 = new JScrollPane();
-        jTable2 = new JTable();
-        jSeparator2 = new JSeparator();
-        jSeparator3 = new JSeparator();
+        JScrollPane jScrollPane2 = new JScrollPane();
+        JTable jTable2 = new JTable();
+        JSeparator jSeparator2 = new JSeparator();
+        JSeparator jSeparator3 = new JSeparator();
         start = new JButton();
         oneDis = new JButton();
         allDis = new JButton();
-        jScrollPane1 = new JScrollPane();
-        jTable1 = new JTable();
+        JScrollPane jScrollPane1 = new JScrollPane();
+        JTable jTable1 = new JTable();
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         setTitle("语义分析(算术表达式)");
         setLocation(200,100);

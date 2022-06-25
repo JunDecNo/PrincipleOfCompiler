@@ -15,15 +15,16 @@ public class Detail extends javax.swing.JFrame{
     // <editor-fold defaultstate="collapsed" desc="Generated Code">
     private void initComponents() {
 
-        jLabel6 = new javax.swing.JLabel();
-        jScrollPane2 = new javax.swing.JScrollPane();
+        JLabel jLabel6 = new JLabel();
+        JScrollPane jScrollPane2 = new JScrollPane();
         jTree = new javax.swing.JTree();
-        jScrollPane1 = new javax.swing.JScrollPane();
+        JScrollPane jScrollPane1 = new JScrollPane();
         jTextArea = new javax.swing.JTextArea();
-        jLabel1 = new javax.swing.JLabel();
-        jLabel2 = new javax.swing.JLabel();
-        jLabel3 = new javax.swing.JLabel();
-        Date = new javax.swing.JLabel();
+        JLabel jLabel1 = new JLabel();
+        JLabel jLabel2 = new JLabel();
+        JLabel jLabel3 = new JLabel();
+        // Variables declaration - do not modify
+        JLabel date = new JLabel();
         Link = new javax.swing.JLabel();
 
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
@@ -75,8 +76,8 @@ public class Detail extends javax.swing.JFrame{
 
         jLabel3.setText("班级：19级计算机科学与技术");
 
-        Date.setForeground(new java.awt.Color(255, 0, 51));
-        Date.setText("最后修改日期：2022/6/13");
+        date.setForeground(new java.awt.Color(255, 0, 51));
+        date.setText("最后修改日期：2022/6/13");
 
         Link.setForeground(new java.awt.Color(0, 153, 255));
         Link.setText("访问GitHub");
@@ -99,7 +100,7 @@ public class Detail extends javax.swing.JFrame{
                                                 .addGap(18, 18, Short.MAX_VALUE)
                                                 .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 167, javax.swing.GroupLayout.PREFERRED_SIZE)
                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                                                .addComponent(Date, javax.swing.GroupLayout.PREFERRED_SIZE, 154, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                .addComponent(date, javax.swing.GroupLayout.PREFERRED_SIZE, 154, javax.swing.GroupLayout.PREFERRED_SIZE)
                                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                                                 .addComponent(Link, javax.swing.GroupLayout.DEFAULT_SIZE, 98, Short.MAX_VALUE))
                                         .addGroup(layout.createSequentialGroup()
@@ -118,7 +119,7 @@ public class Detail extends javax.swing.JFrame{
                                         .addComponent(jLabel1)
                                         .addComponent(jLabel2)
                                         .addComponent(jLabel3)
-                                        .addComponent(Date)
+                                        .addComponent(date)
                                         .addComponent(Link))
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -130,22 +131,7 @@ public class Detail extends javax.swing.JFrame{
         pack();
         AddListener();
     }// </editor-fold>
-
-
-
-    public static void main(String args[]) {
-        new Detail().setVisible(true);
-    }
-
-    // Variables declaration - do not modify
-    private javax.swing.JLabel Date;
     private javax.swing.JLabel Link;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
-    private javax.swing.JLabel jLabel6;
-    private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTextArea jTextArea;
     private javax.swing.JTree jTree;
     private javax.swing.JFrame TmpFrame;
