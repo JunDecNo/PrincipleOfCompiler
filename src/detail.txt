@@ -132,8 +132,860 @@
     private JButton start;
     private DefaultTableModel AnaLysisModel,MidModel;
 -------------END---------------
+    public ArrayList<MidNode> result=new ArrayList();
+    public Lexcial(String str){
+        all_string=str.split("\n");
+        for(int i=0;i<all_string.length;i++){
+            chars=(all_string[i]+" ").toCharArray();
+            GetLex(i+1);
+        }
+    }
+    void GetLex(int row){
+        int begin=0,j,k;
+        char []tmp;
+        for (int i=0;i<chars.length;i++){
+            if (isSep(String.valueOf(chars[i]))>-1||isAlgo(String.valueOf(chars[i]))>-1) {
+                if(begin==i)continue;
+                String one=String.valueOf(chars[begin]);
+                //界符和算符(begin为界符和算符的情况)
+                if (isSep(one)>-1||isAlgo(one)>-1){
+                    String two=one+chars[i];
+                    if (isSep(two)>-1||isSep(one)>-1&&!one.equals("\40")){
+                        if (isSep(two)>-1){//两个字符的界符
+                            result.add(new MidNode(row,two,true,c_type[1],isSep(two)+base+algo));
+                            begin=i+1;
+                        }else{//begin为界符
+                            result.add(new MidNode(row,one,true,c_type[1],isSep(one)+base+algo));
+                            begin=i;
+                        }
+                    }else if(isAlgo(one)>-1&&!one.equals("\40")){//算符
+                        if(isAlgo(two)>-1){
+                            result.add(new MidNode(row,two,true,c_type[0],isAlgo(two)+base));
+                            begin=i+1;
+                        }else{
+                            result.add(new MidNode(row,one,true,c_type[0],isAlgo(one)+base));
+                            begin=i;
+                        }
+                    }
+                }
+                else{
+                    //begin为字母时的情况
+                    //记录到界符或者运算符处的字符串进行判断
+                    //对字符串进行判断
+                    //关键字
+                    tmp=new char[i-begin];//获取字符串
+                    for (j=begin,k=0;j<i;j++,k++){//复制字符串
+                        tmp[k]=chars[j];
+                    }
+                    String str_tmp=String.valueOf(tmp);
+                    if (isBase(str_tmp)>-1){//关键字
+                        result.add(new MidNode(row,str_tmp,true,c_type[4],isBase(str_tmp)));
+                    }
+                    //标识符和常量
+                    else {
+                        boolean isNum = true;//判断是否为数字
+                        int dotNum = 0;
+                        for (int kk = 0; kk < tmp.length; kk++) {
+                            if (tmp[kk] < '0' || tmp[kk] > '9') {
+                                if (tmp[kk]=='.'){
+                                    dotNum++;continue;
+                                }
+                                isNum = false;
+                                break;
+                            }
+                        }
+                        if (isNum) {//数字
+                            if (dotNum<=1){
+                                result.add(new MidNode(row,str_tmp,true,c_type[2],algo+base+sep+1));
+                            }else{
+                                result.add(new MidNode(row,str_tmp,false,c_type[2],algo+base+sep+1));
+                            }
+                        } else if ('0' <= tmp[0] && tmp[0] <= '9') {//非法的标识符
+                            result.add(new MidNode(row,str_tmp,false,c_type[3],algo+base+sep));
+                        } else {//合法的标识符
+                            result.add(new MidNode(row,str_tmp,true,c_type[3],algo+base+sep));
+                        }
+                    }
+                    begin=i;
+                }
+            }
+            else{//扫描到字母时
+                String one=String.valueOf(chars[begin]);
+                if (isSep(one)>-1||isAlgo(one)>-1&&chars[begin]!='\40'){
+                    if(isAlgo(one)>-1){//单个运算符或者分隔符
+                        result.add(new MidNode(row,one,true,c_type[0],isAlgo(one)+base));
+                    }
+                    else if(isSep(one)>-1&&!one.equals("\40")){
+                        result.add(new MidNode(row,one,true,c_type[1],isSep(one)+base+algo));
+                    }
+                    begin=i;
+                }
+            }
+            if(chars[begin]=='\40'&&begin!= chars.length-1)begin=i;
+        }
+    }
+    int isBase(String string){
+        for (int i=0;i<base;i++){
+            if (string.equals(c_code[i]))return i;
+        }
+        return -1;
+    }
+    int isAlgo(String string){
+        for (int i=0;i<algo;i++){
+            if (string.equals(c_algo[i]))return i;
+        }
+        return -1;
+    }
+    int isSep(String string){
+        for (int i=0;i<sep;i++){
+            if (string.equals(c_sep[i]))return i;
+        }
+        return -1;
+    }
 -------------END---------------
+    //验证
+    void Verify() {
+        char[] chars = jTextField.getText().toCharArray();
+        char before = ' ', now;
+        int length = chars.length, left = 0;
+        boolean legal = true;
+        ArrayList<Character>tmp=new ArrayList<>();
+        for (int i = 0; i < length; i++) {
+            if (chars[i] != '\40') {
+                before = chars[i];
+                break;
+            }
+        }
+        for (char aChar : chars) {
+            if (!tmp.contains(aChar) && Character.isLetter(aChar)) tmp.add(aChar);
+        }
+        for (int i = 0; i < length; i++) {
+            now = chars[i];
+            if (chars[i] != '\40' && !isLegal(chars[i])) {
+                if (now == '(') {
+                    left++;
+                    if (i==0)continue;
+                    if (!(isLegal(before)||before=='*'||before=='|'||before=='('||before==')')) {
+                        legal = false;
+                        break;
+                    }
+                } else if (now == ')') {
+                    if (!(isLegal(before)||before=='*'||before==')')|| left == 0) {
+                        legal = false;
+                        break;
+                    }
+                    left--;
+                } else if (now == '|' || now == '*') {
+                    if (i == 0 || before == '(') {
+                        legal = false;
+                        break;
+                    }
+                } else {
+                    legal = false;
+                    break;
+                }
+                before = now;
+            } else if (isLegal(chars[i])) {
+                before = now;
+            }
+        }
+        if (legal && left == 0) {
+            Notice("正确的输入");
+            nor_str = jTextField.getText();
+            create_nfa.setEnabled(true);
+            Sigma=new String[tmp.size()];
+            for(int i=0;i<tmp.size();i++){
+                Sigma[i]= String.valueOf(tmp.get(i));
+            }
+        } else Notice("非法的输入");
+//        for (int j=0,k=0;j<chars.length;j++,k++){
+//            if (Character.isLetter(chars[j]))Sigma[k]=String.valueOf(chars[j]);
+//        }
+    }
+    //判断是否是合法的字符
+    boolean isLegal(char now) {
+        return (now <= 'z' && now >= 'a') || (now <= 'Z' && now >= 'A') || (now <= '9' && now >= '0');
+    }
+    //重置
+    void Reset() {
+        model_nfa.setRowCount(0);
+        model_dfa.setRowCount(0);
+        model_mfa.setRowCount(0);
+        create_nfa.setEnabled(false);
+        create_dfa.setEnabled(false);
+        create_mfa.setEnabled(false);
+    }
+    //读入
+    void Read(String string) {
+        switch (string) {
+            case "nfa":
+                model_nfa.setRowCount(0);
+                nfa_str = Utils.OpenFile(fa_frame);
+                if (Display(nfa_str,0)) {
+                    Notice("读取成功");
+                    create_dfa.setEnabled(true);
+                }
+                break;
+            case "dfa":
+                dfa_str = Utils.OpenFile(fa_frame);
+                model_dfa.setRowCount(0);
+                if (Display(dfa_str,1)) {
+                    Notice("读取成功");
+                    create_mfa.setEnabled(true);
+                }
+                break;
+        }
+    }
+    void Save(String string) {
+        if (string.equals("nfa")) {
+            if (!nfa_list.isEmpty()&&Utils.SaveFile(fa_frame, fa2str(nfa_list,0))) Notice("保存成功");
+        } else if (!dfa_list.isEmpty()&&string.equals("dfa")) {
+            if (Utils.SaveFile(fa_frame, fa2str(dfa_list,1))) Notice("保存成功");
+        } else {
+            if (!mfa_list.isEmpty()&&Utils.SaveFile(fa_frame,fa2str(mfa_list,2))) Notice("保存成功");
+        }
+    }
+    String arr2str(String []arr){
+        StringBuilder res= new StringBuilder();
+        for (String s : arr) {
+            res.append(s).append(";");
+        }
+        return res.toString();
+    }
+    //将falist转换为字符串
+    String fa2str(ArrayList<FaNode> faLists,int opt){
+        if(opt==0){
+            StringBuilder result= new StringBuilder("开始符:" + nfa_start[0] + "\n"
+                    + "终结符:" + nfa_end[0] + "\n" + "符号集:" + arr2str(Sigma) + "\n");
+            for (FaNode tmp : faLists)
+                result.append(tmp.start).append("\t").append(tmp.receive).append("\t").append(tmp.end).append("\n");
+            return result.toString();
+        }else if(opt==1){
+            StringBuilder result= new StringBuilder("开始符:" + arr2str(dfa_start) + "\n"
+                    + "终结符:" + arr2str(dfa_end)+ "\n"+"最大状态数:"+dfa_status.size()+"\n"
+                    + "符号集:" + arr2str(Sigma) + "\n");
+            for (FaNode tmp : faLists)
+                result.append(tmp.start).append("\t").append(tmp.receive).append("\t").append(tmp.end).append("\n");
+            return result.toString();
+        }else{
+            StringBuilder result= new StringBuilder("开始符:" + mfa_start[0] + "\n"
+                    + "终结符:" + mfa_end[0] + "\n" + "符号集:" + arr2str(Sigma) + "\n");
+            for (FaNode tmp : faLists)
+                result.append(tmp.start).append("\t").append(tmp.receive).append("\t").append(tmp.end).append("\n");
+            return result.toString();
+        }
+    }
+    //输出字符串
+    boolean Display(String string,int opt) {
+        String[] strings = string.split("\n");
+        int len = strings.length;
+        try {
+            if(opt==0){
+                nfa_list.clear();
+                lab18.setText("初始状态集：" + strings[0].substring(6));
+                lab19.setText("终止状态集：" + strings[1].substring(5));
+                nfa_start = strings[0].substring(6).split("\40");
+                nfa_end = strings[1].substring(5).split("\40");
+                Sigma = strings[2].substring(6).split(";");
+                for (int i = 3; i < len; i++) {
+                    String[] temp = strings[i].split("\t");
+                    Vector<String> vector = new Vector<>();
+                    vector.add(temp[0]);
+                    vector.add(temp[1]);
+                    vector.add(temp[2]);
+                    model_nfa.addRow(vector);
+                    nfa_list.add(new FaNode(Integer.parseInt(temp[0]), temp[1].charAt(0), Integer.parseInt(temp[2])));
+                }
+            }else if(opt==1){
+                dfa_list.clear();
+                lab21.setText("初始状态集：" + strings[0].substring(6));
+                lab20.setText("终止状态集：" + strings[1].substring(5));
+                dfa_start = strings[0].substring(6).split(";");
+                dfa_end = strings[1].substring(5).split(";");
+                for(int i=0;i<Integer.parseInt(strings[2].substring(8));i++) dfa_status.add(i+1);
+                Sigma = strings[3].substring(6).split(";");
+                for (int i = 4; i < len; i++) {
+                    String[] temp = strings[i].split("\t");
+                    Vector<String> vector = new Vector<>();
+                    vector.add(temp[0]);
+                    vector.add(temp[1]);
+                    vector.add(temp[2]);
+                    model_dfa.addRow(vector);
+                    dfa_list.add(new FaNode(Integer.parseInt(temp[0]), temp[1].charAt(0), Integer.parseInt(temp[2])));
+                }
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
+    }
+    //打印状态机的状态
+    void Print_List(ArrayList<FaNode> list, int option) {
+        for (FaNode faList : list) {
+            Vector<String> vector = new Vector<>();
+            vector.add(String.valueOf(faList.start));
+            vector.add(String.valueOf(faList.receive));
+            vector.add(String.valueOf(faList.end));
+            if (option == 1) model_nfa.addRow(vector);
+            else if (option == 2) model_dfa.addRow(vector);
+            else if (option == 3) model_mfa.addRow(vector);
+        }
+    }
+    //Move函数，寻找接受符的下一个状态集合
+    ArrayList<Integer> Move(ArrayList<Integer> array, char ch, int option) {
+        ArrayList<Integer> res = new ArrayList<>();
+        ArrayList<FaNode> list;
+        if (option == 0) list = nfa_list;
+        else list = dfa_list;
+        for (Integer integer : array) {
+            for (FaNode temp : list) {
+                if (integer == temp.start && ch == temp.receive) {
+                    res.add(temp.end);
+                }
+            }
+        }
+        return Set(res);
+    }
+    //获取dfa的下一个状态，如果没有就是用-1表示
+    ArrayList<Integer> Next(ArrayList<Integer> array, char ch) {
+        ArrayList<Integer> res = new ArrayList<>();
+        for (Integer integer : array) {
+            boolean is=false;
+            for (FaNode temp : dfa_list) {
+                if (integer == temp.start && ch == temp.receive) {
+                    is=true;
+                    res.add(temp.end);
+                }
+            }
+            if(!is)res.add(-1);
+        }
+        return Set(res);
+    }
+    //Move函数，寻找接受符的下一个状态
+    int Move(int start, char ch) {
+        ArrayList<FaNode> list = new ArrayList<>();
+        for (FaNode faList : dfa_list) {
+            if (faList.start == start && faList.receive == ch) return faList.end;
+        }
+        return -1;
+    }
+    //E_closure函数，获取状态的空闭包，为nfa->dfa服务
+    ArrayList<Integer> E_closure(ArrayList<Integer> array) {
+        int len = array.size(), list_len = nfa_list.size(), j,i;
+        ArrayList<Integer> result = new ArrayList<>();
+        Queue<Integer> queue = new LinkedList<>();
+        for (j = 0; j < len; j++) {
+            queue.offer(array.get(j));
+            result.add(array.get(j));
+        }
+        i=0;
+        while (!queue.isEmpty()) {
+            if(i==nfa_list.size())break;
+            int front = queue.peek();
+            for (j = 0; j < list_len; j++) {
+                if (front == nfa_list.get(j).start && nfa_list.get(j).receive == epsilon) {
+                    queue.offer(nfa_list.get(j).end);
+                    result.add(nfa_list.get(j).end);
+                }
+            }
+            queue.poll();
+            i++;
+        }
+        return Set(result);
+    }
+
+    //正则式到nfa
+    void nor2nfa() {
+        model_nfa.setRowCount(0);
+        nfa_list.clear();
+        String s = jTextField.getText();
+        Stack<Character> stack = new Stack<>();
+        char[] ch = s.toCharArray();
+        int i;
+        StringBuilder connect = new StringBuilder();
+        for (i = 0; i < ch.length; i++) {
+            if (ch[i] == '*' && i < ch.length - 1 && (Character.isLetter(ch[i+1]))) {
+                //该字符是*,下一字符是小写字母,入栈并加'.'
+                connect.append("*.");
+            } else if (ch[i] == '(' && i != 0 && ch[i - 1] != '|') {
+                //非首位的左括号,且前一个不是|,加.
+                connect.append(".(");
+            } else if (i > 0 && (Character.isLetter(ch[i])) && (Character.isLetter(ch[i-1]) || ch[i - 1] == ')')) {
+                //非首位字母,且前一个也为字母或者前一个是）
+                connect.append('.').append(ch[i]);
+            } else {
+                connect.append(ch[i]);
+            }
+        }
+        //生成后缀表达式
+        char[] c = connect.toString().toCharArray();
+        StringBuilder str = new StringBuilder();
+        for (i = 0; i < c.length; i++) {
+            if (Character.isLetter(c[i])) str.append(c[i]);//字母直接输出
+            if (c[i] == '(')//如果是（，进栈，（的优先级是最低的
+            {
+                stack.push('(');
+            }
+            if (c[i] == ')')//)，输出栈顶元素直到左括号
+            {
+                while (stack.size() > 0 && !stack.peek().equals('(')) {
+                    str.append(stack.pop());
+                }
+                if (stack.size() > 0 && stack.peek().equals('(')) {
+                    stack.pop();
+                }
+            }
+            if (c[i] == '*')//*,如果栈顶元素是*、（、），输出，并当前进栈，否则直接进栈。
+            {
+                while (stack.size() > 0 && stack.peek().equals('*')) {
+                    str.append('*');
+                }
+                if (stack.size() == 0 || !stack.peek().equals('*')) {
+                    stack.push('*');
+                }
+            }
+            if (c[i] == '|')//|，栈顶是|、.、*、（、），输出，并当前进栈，否则直接进栈
+            {
+                while (stack.size() > 0 && (stack.peek().equals('*') || stack.peek().equals('|') || stack.peek().equals('.'))) {
+                    str.append(stack.pop());
+                }
+                stack.push('|');
+            }
+            if (c[i] == '.')//.,栈顶是.、*，输出，并当前进栈，否则直接进栈
+            {
+                while (stack.size() > 0 && (stack.peek().equals('.') || stack.peek().equals('*'))) {
+                    str.append(stack.pop());
+                }
+                stack.push('.');
+            }
+        }
+        while (stack.size() > 0) {
+            str.append(stack.pop());
+        }
+        Stack<FaNode> result = new Stack<>();
+        int zuo = 0, you = 0;
+        char[] hs = str.toString().toCharArray();
+        for (i = 0; i < hs.length; i++) {
+            if (Character.isLetter(hs[i])) {//字母进栈
+                zuo = ++you;
+                you++;
+                FaNode faList=new FaNode(zuo,hs[i],you);
+                nfa_list.add(faList);
+                result.push(faList);
+            }
+            if (hs[i] == '*'){//F
+                FaNode fa=result.pop();
+                zuo = fa.end+1;
+                you = zuo + 1;
+                nfa_list.add(new FaNode(zuo,epsilon,fa.start));
+                nfa_list.add(new FaNode(fa.end,epsilon,fa.start));
+                nfa_list.add(new FaNode(fa.end,epsilon,you));
+                nfa_list.add(new FaNode(zuo,epsilon,you));
+                result.push(new FaNode(zuo,' ',you));
+            }
+            if (hs[i] == '.')//取两个栈顶元素出栈，进行连接操作
+            {
+                FaNode fa=result.pop(),fa1=result.pop();
+                zuo = fa1.start;
+                you = fa.end;
+                nfa_list.add(new FaNode(fa1.end,epsilon,fa.start));
+                result.push(new FaNode(zuo,' ',you));
+            }
+
+            if (hs[i] == '|') {
+                FaNode fa=result.pop(),fa1=result.pop();
+                zuo = fa.end + 1;
+                you = zuo + 1;
+                nfa_list.add(new FaNode(zuo,epsilon,fa.start));
+                nfa_list.add(new FaNode(zuo,epsilon,fa1.start));
+                nfa_list.add(new FaNode(fa.end,epsilon,you));
+                nfa_list.add(new FaNode(fa1.end,epsilon,you));
+                result.push(new FaNode(zuo,' ',you));
+            }
+        }
+        Print_List(nfa_list,1);
+        create_dfa.setEnabled(true);
+        nfa_start=new String[1];nfa_end=new String[1];
+        nfa_start[0]=zuo+"";
+        nfa_end[0]=you+"";
+        lab18.setText("初始状态集：" +nfa_start[0]);
+        lab19.setText("终止状态集：" +nfa_end[0]);
+    }
+    //nfa到dfa
+    void nfa2dfa() {
+        model_dfa.setRowCount(0);
+        dfa_list.clear();
+        ArrayList<ArrayList<Integer>> matrix = new ArrayList<>();
+        ArrayList<Boolean> booleans = new ArrayList<>();
+        ArrayList<Integer> start = str2int(nfa_start), end = str2int(nfa_end);
+        matrix.add(E_closure(start));
+        booleans.add(false);
+        while (GetFalse(booleans) > -1) {
+            int index = GetFalse(booleans);
+            for (int i = 0; i < Sigma.length; i++) {
+                ArrayList<Integer> New = E_closure(Move(matrix.get(index), Sigma[i].charAt(0), 0));
+                if (isContain(matrix, New) == -1) {
+                    matrix.add(New);
+                    booleans.add(false);
+                }
+            }
+            booleans.set(index, true);
+        }
+        //构造dfa
+        ArrayList<Integer> ends = new ArrayList<>();
+        for (int i = 0; i < matrix.size(); i++) {
+            for (int j = 0; j < Sigma.length; j++) {
+                char ch = Sigma[j].charAt(0);
+                if (isContain(matrix, E_closure(Move(matrix.get(i), ch, 0))) != -2) {
+                    FaNode faList = new FaNode(i + 1, ch,
+                            isContain(matrix, E_closure(Move(matrix.get(i), ch, 0))) + 1);
+                    dfa_list.add(faList);
+                    if (!dfa_status.contains(faList.start)) dfa_status.add(faList.start);
+                }
+            }
+        }
+        Print_List(dfa_list, 2);
+        dfa_start = new String[1];
+        dfa_start[0] = "1";
+        dfa_status=Set(dfa_status);
+        for (int i = 0; i < matrix.size(); i++) {
+            if (isContain(matrix.get(i), nfa_end)) {
+                ends.add(i);
+            }
+        }
+        dfa_end = new String[ends.size()];
+        String dfa_str = "";
+        for (int i = 0; i < dfa_end.length; i++) {
+            dfa_end[i] = String.valueOf(ends.get(i) + 1);
+            dfa_str += dfa_end[i] + " ";
+        }
+        lab21.setText("初始状态集：" + "1");
+        lab20.setText("终止状态集：" + dfa_str);
+        create_mfa.setEnabled(true);
+    }
+    //dfa到mfa
+    void dfa2mfa() {//分割法
+        model_mfa.setRowCount(0);
+        mfa_list.clear();
+        ArrayList<ArrayList<Integer>> matrix = new ArrayList<>();//临时保存
+        ArrayList<Integer> ends = str2int(dfa_end), not_ends = new ArrayList<>();
+        for (int i = 0; i < dfa_status.size(); i++)
+            if (!ends.contains(dfa_status.get(i))) not_ends.add(dfa_status.get(i));
+        matrix.add(not_ends);
+        matrix.add(ends);
+        matrix=SetArr(matrix);
+        while (true) {
+            int len = matrix.size();
+            for (int i = 0; i < len; i++) {//开始顺序判断集合
+                for (String s : Sigma) {//输入符号Sigma
+                    ArrayList<ArrayList<Integer>> result = new ArrayList<>();//保存结果集合
+                    if (isContain(matrix, Next(matrix.get(i), s.charAt(0))) == -1) {//不包含产生集合
+                        ArrayList<Integer> index = matrix.get(i);//选择存在状态不同的集合
+                        //划分
+                        for (ArrayList<Integer> integers : matrix) {
+                            ArrayList<Integer> arrayList = new ArrayList<>();//array保存一个集合
+                            for (Integer integer : index) {
+                                if (integers.contains(Move(integer, s.charAt(0)))) {
+                                    arrayList.add(integer);
+                                }
+                            }
+                            result.add(arrayList);
+                        }
+                        ArrayList<Integer> arrayList = new ArrayList<>();
+                        for (Integer integer : index) {//不存在时
+                            //array保存一个集合
+                            if (Move(integer, s.charAt(0)) == -1) {
+                                arrayList.add(integer);
+                            }
+                        }
+                        result.add(arrayList);
+                        matrix.remove(i);
+                        Add(matrix, result);
+                    }
+                }
+                if (len != matrix.size()) break;
+            }
+            if (len == matrix.size()) break;
+        }
+        matrix=SetArr(matrix);
+        Collections.sort(matrix, new MyIntComparator());
+        String string="";
+        for (int i=0;i<matrix.size();i++){
+            ArrayList<Integer>temp=matrix.get(i);
+            if(isContain(temp,dfa_end))string+=i+1+" ";//预处理
+            for (String s : Sigma) {
+                if (Move(temp, s.charAt(0), 1).isEmpty()) continue;
+                ArrayList<Integer> next = Move(temp, s.charAt(0), 1);
+                FaNode faList = new FaNode(i + 1, s.charAt(0), isContain(matrix, next.get(0)) + 1);
+                mfa_list.add(faList);
+            }
+        }
+        mfa_end=string.split("\40");
+        mfa_start=new String[1];
+        mfa_start[0]="1";
+        Print_List(mfa_list,3);
+        lab26.setText("初始状态集：" +"1");
+        lab27.setText("终止状态集：" +string);
+    }
+
+    //string转array
+    ArrayList<Integer> str2int(String[] strings) {
+        ArrayList<Integer> res = new ArrayList<>();
+        for (int i = 0; i < strings.length; i++) {
+            res.add(Integer.parseInt(strings[i]));
+        }
+        return res;
+    }
+    //将result中元素加入matrix中，用于dfa->mfa
+    void Add(ArrayList<ArrayList<Integer>>matrix,ArrayList<ArrayList<Integer>>result){
+        for (ArrayList<Integer> arrayList : result) {
+            if (arrayList.isEmpty()) continue;
+            matrix.add(arrayList);
+        }
+    }
+    //删除重复元素
+    ArrayList<Integer> Set(ArrayList<Integer> arrayList) {
+        ArrayList<Integer> set = new ArrayList<>();
+        for (int j = 0; j < arrayList.size(); j++)
+            if (!set.contains(arrayList.get(j))) set.add(arrayList.get(j));
+        return set;
+    }
+    //删除重复元素
+    ArrayList<ArrayList<Integer>> SetArr(ArrayList<ArrayList<Integer>> arrayList) {
+        ArrayList<ArrayList<Integer>> set = new ArrayList<>();
+        for (int j = 0; j < arrayList.size(); j++)
+            if (!set.contains(arrayList.get(j))) set.add(arrayList.get(j));
+        return set;
+    }
+    //获取未标记的状态
+    int GetFalse(ArrayList<Boolean> booleans) {
+        for (int i = 0; i < booleans.size(); i++)
+            if (!booleans.get(i)) return i;
+        return -1;
+    }
+    //提示函数
+    void Notice(String str) {
+        JOptionPane.showMessageDialog(fa_frame, str, "提示", JOptionPane.INFORMATION_MESSAGE);
+    }
+    //判断element是否包含在contain中
+    int isContain(ArrayList<ArrayList<Integer>> contain, ArrayList<Integer> element) {
+        if (element.size() == 0) return -2;
+        for (int i = 0; i < contain.size(); i++) {
+            if (contain.get(i).size() == element.size()) {
+                boolean is = false;
+                for (Integer integer : element) {
+                    if (!contain.get(i).contains(integer)) {
+                        is = true;
+                        break;
+                    }
+                }
+                if (!is) return i;
+            }
+        }
+        return -1;
+    }
+    int isContain(ArrayList<ArrayList<Integer>> contain, int num) {
+        for (int i = 0; i < contain.size(); i++) {
+            if (contain.get(i).contains(num))return i;
+        }
+        return -1;
+    }
+    boolean isContain(ArrayList<Integer> source,String[]strings){
+        for (int i=0;i<strings.length;i++){
+            if(source.contains(Integer.parseInt(strings[i])))return true;
+        }
+        return false;
+    }
 -------------END---------------
+(1) LL_1_Grammar()
+构造方法。用于构造界面和初始化
+(2) LL_1_Grammar(String str)
+带参构造方法。为后续的LR系列分析方法服务
+(3) Str_Null(String)
+通过First集判断输入参数String是否可以到空串
+(4) DataPreprocess(String str)
+数据预处理。针对输入文本进行控制和修改，保证可以得到正确格式的产生式，以便于后续操作进行。
+(5) Init()
+初始化变量。对类型中的变量进行声明。
+(6) Setting()
+设置java GUI的属性和参数，以及添加文本框的响应函数
+(7) AddComponent()
+在对应容器中添加组件并设置布局，是的布局合理颜色好看
+(8) AddListener()
+为组件添加响应函数，使组件可以触发响应
+(9) ComponentControl()
+主要设置按钮是否可用，如文法不为LL(1)型文法时，设置后续操作按钮为禁止。
+(10) actionPerformed(ActionEvent e)
+绑定响应函数，如当点击btn1调用btn1_function();
+(11) Save_Ana()
+保存分析结果，即句子对于文法的分析过程和分析结果
+(12) Open_File()
+打开文件，读取文件信息，并弹出相应提示
+(13) Save_File()
+保存文法文件，包括文法的错误提示
+(14) Analyze()
+构造句子对于该文法的预测分析过程
+(15) List2str(ArrayList<Character> list)
+将数组转化为字符串以便于显示输出。
+(16) One_show()
+单步显示句子对于该文法的预测分析过程
+(17) Result_Show()
+全部显示句子对于该文法的预测分析过程
+(18) First_Show()
+显示First集
+(19) Follow_Show()
+显示Follow集
+(20) Predict_Show()
+显示预测分析表
+(21) CanNull()
+判断哪些非终结符可以到达空
+(22) First()
+通过NodeList构造First集合
+(23) Follow()
+通过NodeList构造Follow集合
+(24) Select()
+通过NodeList构造Select集合
+(25) isLL_1()
+判断文法是否为LL(1)文法
+(26) isExistLeftRecursive()
+判断字符串String是否存在左递归
+(27) isExistSame(ArrayList)
+判断ArrayList中是否存在相同的元素
+(28) Set(ArrayList)
+删除ArrayList数组的重复元素
+(29) Add(ArrayList, ArrayList)
+合并两个ArrayList数组。
+(30) GetNodeList(String)
+将字符串String转换为NodeList(LLNode类型的数组)
+(31) isContainVt(String)
+判断String是否在终结符中，返回bool类型
+(32) First(String)
+判断字符串String的First集
 -------------END---------------
+（1）void initComponents()
+	GUI界面的组件声明以及布局
+（2）void Struct()
+	根据不同的文法类型(LR(0)/SLR(1))调用不同的方法构造预测分析表
+（3）void Save_Ana()
+	保存句子分析结果到文件
+（4）void SenAnalyze()
+	针对不同的文法分析不同的句子
+（5）void One_Show()
+	一部显示句子分析过程
+（6）void Result_Show()
+	全部显示句子分析过程
+（7）void Project_Show()
+	显示文法的项目及规范族
+（8）void Open_File()
+	打开对于的文本文件，并且进行输出到文本框中
+（9）void Save_File()
+	保存文本框中的信息，包括错误提示等
+（10）void Confirm()
+	根据不同的文法调用方法验证文法是否属于LR(0)/SLR(1),并进行提示
+（11）void LR_0()
+	验证是否为LR(0)文法
+（12）void Struct_LR_0_Table()
+	构造LR(0)预测分析表
+（13）void SLR_1()
+	验证是否为SLR(1)文法
+（14）void Struct_SLR_1_Table()
+	构造SLR(1)预测分析表
+（15）LRNode LRClosure(……)
+	构造项目集规范族的闭包函数
+（16）void StructItemCluster(int GrammarType)
+	通过序号选择对应的项目集规范族
+（17）boolean isContain(ArrayList<ClusterNode>source,ClusterNode element)
+	判断项目集规范族是否包含element状态
+（18）ArrayList<LLNode> Closure(ArrayList<LLNode> list)
+	构造项目集规范族的闭包函数
+（19）String Cluster2String(ArrayList<LLNode>source)
+	将项目集转化为字符串便于输出和对比
+（20）ArrayList<LLNode> GetNodeList(String source)
+	将字符串转化为NodeList数据列表
+（21）ArrayList<LLNode> GOTO(ArrayList<LLNode> source,char receive)
+	GOTO函数，寻找接受字符的下一个状态
+（22）ArrayList<Character> GetChar(ArrayList<LLNode>source)
+	获取source的接受字符，便于使用
+（23）boolean isContainer(ArrayList<LLNode>source, LLNode element)
+	判断是否source包含element，是多态的实现
+（24）void SelectGrammar()
+	选择LR(0)/SLR(1)文法
+（25）void Modify(String str)
+	识别字符串
+（26）void ComponentControl()
+	控制按钮的可用性
+（27）void AddListener()
+	添加监听器
+（28）public void actionPerformed(ActionEvent e)
+	创建按钮的响应函数
+（29）boolean DataPreprocess(String str)
+	数据预处理，报错提示，输出信息等
 -------------END---------------
+public SLR(String Grammar)
+构造方法，用于计算分析过程。
+public void SetSentence(String string)
+设置句子
+void SenAnalyze()
+通过构造的预测分析表产生对于句子string的分析过程。
+void Project_Show()
+构造项目集规范族到ArrayList<ClusterNode>Cluster_List中。
+void Struct_LR_0_Table()
+构造LR_0预测分析表方便更改。
+void SLR_1(String Grammar)
+判断是否式SLR_1文法。
+void Struct_SLR_1_Table()
+通过调用LR_0文法之后对冲突状态进行修改实现SLR(1)分析表的构造
+void StructItemCluster()
+构造项目集族
+boolean isContain(ArrayList<ClusterNode>source,ClusterNode element)
+判断element是否在source中
+ArrayList<LLNode> Closure(ArrayList<LLNode> list)
+通过产生式计算list的闭包
+String Cluster2String(ArrayList<LLNode>source)
+将source转化为字符串方便判断。
+ArrayList<LLNode> GetNodeList(String source)
+将输入的文法字符串转化为ArrayList<LLNode> Node_List，方便处理。
+ArrayList<LLNode> GOTO(ArrayList<LLNode> source,char receive)
+GOTO函数，获取source接受receive到达的下一个闭包。
+ArrayList<Character> GetChar(ArrayList<LLNode>source)
+获取source的接受字符。
+boolean isContainer(ArrayList<LLNode>source, LLNode element)
+判断element是否在source中。
+
+-----SemanticAnalysis------
+void create()
+通过调用SLR类创建语法制导的语义分析表。
+ void save()
+保存算术表达式、中间代码以及寄存器内容。
+void reset()
+重置函数，重置所有组件。
+void oneDis()
+一步显示，每调用一次显示一次分析过程。
+void allDis()
+全部显示，一次性显示所有分析过程。
+void start()
+将create()中创建的MidList打印在JTable中。
+String GetStack()
+获取语义栈中的所有元素并添加-返回String类型用于显示语义栈信息。
+int GetFirst(String[]number)
+获取number数组中第一个非空元素。
+ String GetTemp()
+获取一个新的临时变量，相当于书本中的netTemp()
+  String GetAddress()
+获取四元式的地址信息。
+boolean isLegal(String str)
+判断String是否合法。
+ boolean isAlgo(char ch)
+void ButtonControl(boolean option)
+按钮可用性控制。
+ boolean DatePre()
+算术表达式预处理。
+ void RunCode()
+运行中间代码，并显示所有寄存器的值。
+ private void initComponents()
+界面布局。
+ public void actionPerformed(ActionEvent e)
+设置按钮等组件的监听函数。
+void AddListener()
+为按钮等组件添加监听器。
 -------------END---------------

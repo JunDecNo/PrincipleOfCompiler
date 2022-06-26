@@ -77,7 +77,7 @@ public class Detail extends javax.swing.JFrame{
         jLabel3.setText("班级：19级计算机科学与技术");
 
         date.setForeground(new java.awt.Color(255, 0, 51));
-        date.setText("最后修改日期：2022/6/13");
+        date.setText("最后修改日期：2022/6/26");
 
         Link.setForeground(new java.awt.Color(0, 153, 255));
         Link.setText("访问GitHub");
@@ -143,31 +143,31 @@ public class Detail extends javax.swing.JFrame{
         if (father.equals("词法分析")){
             if(son.equals("变量"))jTextArea.setText(Utils.GetFileString("src/detail.txt",0,15));
             if(son.equals("方法")){
-                jTextArea.setText(Utils.GetFileString("src/detail.txt",0,14));
+                jTextArea.setText(Utils.GetFileString("src/detail.txt",134,243));
                 ShowImage("src/DetailImage/Lexcial.png",name);
             }
         }else if(father.equals("自动机系统")){
             if(son.equals("变量"))jTextArea.setText(Utils.GetFileString("src/detail.txt",17,33));
             if(son.equals("方法")){
-                jTextArea.setText(Utils.GetFileString("src/detail.txt",0,14));
+                jTextArea.setText(Utils.GetFileString("src/detail.txt",245,797));
                 ShowImage("src/DetailImage/NFA_DFA_MFA.png",name);
             }
         }else if(father.equals("LL(1)词法分析")){
             if(son.equals("变量"))jTextArea.setText(Utils.GetFileString("src/detail.txt",35,63));
             if(son.equals("方法")){
-                jTextArea.setText(Utils.GetFileString("src/detail.txt",0,14));
+                jTextArea.setText(Utils.GetFileString("src/detail.txt",799,862));
                 ShowImage("src/DetailImage/LL_1_Grammar.png",name);
             }
         }else if(father.equals("LR词法分析")){
             if(son.equals("变量"))jTextArea.setText(Utils.GetFileString("src/detail.txt",65,111));
             if(son.equals("方法")){
-                jTextArea.setText(Utils.GetFileString("src/detail.txt",0,14));
+                jTextArea.setText(Utils.GetFileString("src/detail.txt",864,921));
                 ShowImage("src/DetailImage/LR_Series.png",name);
             }
         }else if(father.equals("语义分析")){
-            if(son.equals("变量"))jTextArea.setText(Utils.GetFileString("src/detail.txt",114,132));
+            if(son.equals("变量"))jTextArea.setText(Utils.GetFileString("src/detail.txt",923,989));
             if(son.equals("方法")){
-                ShowImage("src/images/allow.png",name);
+                ShowImage("src/DetailImage/SemanticAnalysis.png",name);
             }
         }
     }

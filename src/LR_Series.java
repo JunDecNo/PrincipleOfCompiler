@@ -420,7 +420,7 @@ public class LR_Series extends JFrame implements ActionListener {
                     chars.remove(0);//删除第一个
                 }else if (opt.startsWith("r")){//进行归约操作
                     //选择产生式
-                    String t=opt.substring(1,opt.length()-1);
+                    String t=opt.substring(1).trim();
                     LLNode node=Node_List.get(Integer.parseInt(t));
                     int right=node.V.length();
                     //从状态栈和符号栈中删除right个
@@ -719,7 +719,7 @@ public class LR_Series extends JFrame implements ActionListener {
                 for (String vt:Vt){
                     int row=node.S;
                     int col=Vt.indexOf(vt)+1;
-                    if (VtList.get(node.S).contains(vt.charAt(0))){//移进
+                    if (VtList.get(node.S)!=null&&VtList.get(node.S).contains(vt.charAt(0))){//移进
                         ArrayList<LLNode> tmp=GOTO(node.cluster, vt.charAt(0));
                         for (int i=0;i<rows;i++){
                             if (Cluster2String(tmp).equals(Project_Model.getValueAt(i,1))){//找到了下一状态
@@ -798,8 +798,8 @@ public class LR_Series extends JFrame implements ActionListener {
     //构造项目集规范族
     void StructItemCluster(){
         Node_List=GetNodeList(Input_Area.getText());//拓广文法
-        Item_List.clear();
-        Cluster_List.clear();
+        Item_List=new ArrayList<>();
+        Cluster_List=new ArrayList<>();
         //构造项目集
         for (LLNode node:Node_List){
             int len=node.V.length();
@@ -813,8 +813,6 @@ public class LR_Series extends JFrame implements ActionListener {
         ArrayList<LLNode>tmp=new ArrayList<>();
         tmp.add(Item_List.get(0));//初始集
         Cluster_List.add(new ClusterNode(index,Closure(tmp)));//加入到Cluster集合中
-//        System.out.println(GetChar(Closure(tmp)));//测试GetChar是否正确
-//        for(LLNode node:GOTO(Closure(tmp),'T'))System.out.println(node.Vn+"->"+node.V);
         Queue<ArrayList<LLNode>>queue=new LinkedList<>();
         queue.add(Closure(tmp));
         while(!queue.isEmpty()){

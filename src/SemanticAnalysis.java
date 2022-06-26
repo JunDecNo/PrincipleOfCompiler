@@ -4,9 +4,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
-import java.util.ArrayList;
-import java.util.Stack;
-import java.util.Vector;
+import java.text.DateFormat;
+import java.util.*;
 
 public class SemanticAnalysis extends JFrame implements ActionListener {
     public SemanticAnalysis() {
@@ -19,24 +18,29 @@ public class SemanticAnalysis extends JFrame implements ActionListener {
     private JButton oneDis;
     private JButton save;
     private JButton start;
+    private JButton RunCode;
     private DefaultTableModel AnaLysisModel,MidModel;
     private final ArrayList<Vector<String>>Display=new ArrayList<>();//用来保存分析结果集合。
     private final Stack<Double> Semantic=new Stack<>();
     private final Stack<String> MidStack=new Stack<>();
     private int Address,TempIndex;
     private final ArrayList<Vector<String>>MidList=new ArrayList<>();
-    private String result;
+    private String result,reg="",math;
     //方法设置
     void create(){
         for (Vector<String> vector:MidList){
             MidModel.addRow(vector);
         }
         create.setEnabled(false);
+        RunCode.setEnabled(true);
+        save.setEnabled(true);
     }
     void save(){
         StringBuilder string=new StringBuilder();
+        string.append("---------------------算数表达式---------------------\n");
+        string.append(math).append("\n");
         string.append("---------------------中间代码---------------------\n");
-        string.append("步骤\t\t\t运算符\t\t数据1\t\t数据2\t\t结果\n");
+        string.append("步骤\t\t\t运算符\t\t数据1\t\t\t数据2\t\t\t结果\n");
         for (Vector<String>vector:MidList){
             string.append(vector.get(0)).append("\t\t\t");
             string.append(vector.get(1)).append("\t\t\t");
@@ -46,7 +50,8 @@ public class SemanticAnalysis extends JFrame implements ActionListener {
         }
         string.append("分析结果: ").append(
                 AnaLysisModel.getValueAt(AnaLysisModel.getRowCount()-1,AnaLysisModel.getColumnCount()-2));
-        string.append("\n分析值: ").append(result);
+        string.append("\n分析值: ").append(result).append("\n");
+        if (!reg.equals(""))string.append("---------------------寄存器临时结果---------------------\n").append(reg);
         Utils.SaveFile(this,string.toString());
     }
     void reset(){
@@ -56,6 +61,7 @@ public class SemanticAnalysis extends JFrame implements ActionListener {
     }
     void oneDis(){
         if (!Display.isEmpty()) AnaLysisModel.addRow(Display.get(0));
+        else Utils.Notice(this,"计算结果为："+result);
         Display.remove(0);
     }
     void allDis(){
@@ -63,12 +69,17 @@ public class SemanticAnalysis extends JFrame implements ActionListener {
             AnaLysisModel.addRow(Display.get(i));
             Display.remove(i);i--;
         }
+        if (AnaLysisModel.getValueAt(AnaLysisModel.getRowCount()-1,4).equals("接受，匹配成功")){
+            Utils.Notice(this,"计算结果为："+result);
+        }else Utils.Notice(this,"归约失败，不是合法的表达式");
+
     }
     void start(){
         Address=0;TempIndex=0;
         Semantic.clear();
         MidStack.clear();
         MidList.clear();
+        Display.clear();
         AnaLysisModel.setRowCount(0);
         MidModel.setRowCount(0);
         if (!isLegal(jTextField.getText())){
@@ -78,6 +89,8 @@ public class SemanticAnalysis extends JFrame implements ActionListener {
             Utils.Notice(this,"请输入算术表达式");
             return;
         }
+        //字符串预处理
+        if (!DatePre())return;
         //匹配串
         String string=jTextField.getText().replaceAll("([0-9]*[.])?[0-9]+","i");
         //获取数字
@@ -196,8 +209,7 @@ public class SemanticAnalysis extends JFrame implements ActionListener {
             if (vector.get(4).contains("r12"))number[GetFirst(number)]="";
             if (MidRows.size()==5)MidList.add(MidRows);
         }
-        result= String.valueOf(Semantic.pop());
-        Utils.Notice(this,"计算结果为："+result);
+        result= String.format("%.2f",Semantic.pop());
         ButtonControl(true);
     }
     String GetStack(){
@@ -227,14 +239,99 @@ public class SemanticAnalysis extends JFrame implements ActionListener {
     }
     boolean isLegal(String str){
         for (char ch:str.toCharArray())
-            if (!((ch>='0'&&ch<='9')||(ch=='('||ch==')'||ch=='+'||ch=='-'||ch=='*'||ch=='/'||ch=='%'||ch=='^'||ch=='.')))
+            if (!((ch>='0'&&ch<='9')||
+                    (ch=='('||ch==')'||ch=='+'||ch=='-'||ch=='*'||ch=='/'||ch=='%'||ch=='^'
+                            ||ch=='.'||ch=='（'||ch=='）'||ch==' ')))
                 return false;
         return true;
+    }
+    boolean isAlgo(char ch){
+        return ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '%' || ch == '^';
     }
     void ButtonControl(boolean option){
         oneDis.setEnabled(option);
         allDis.setEnabled(option);
         create.setEnabled(option);
+        RunCode.setEnabled(option);
+        save.setEnabled(option);
+    }
+    boolean DatePre(){
+        String str=jTextField.getText();
+        char[]chs=str.replace(" ","").toCharArray();
+        for (int i=0;i<chs.length-1;i++){
+            if (isAlgo(chs[i])&&isAlgo(chs[i+1])){//连续两次算符
+                chs[i]=' ';
+            }
+        }
+        str= String.copyValueOf(chs);
+        if(str.equals("")){
+            Utils.Notice(this,"请输入表达式");
+            return false;
+        }
+        else if (str.contains(" ")||str.contains("（")||str.contains("）")){
+                str=str.replace(" ","").replace("（","(").replace("）",")");
+                Utils.Notice(this,"将输入算数式子修改为  "+str);
+                jTextField.setText(str);
+        }
+        math=str;
+        return true;
+    }
+    void RunCode(){
+        Map<String,Double>TmpMap=new HashMap<>();
+        reg="";
+        for (Vector<String> vector:MidList){
+            String opt=vector.get(1);
+            //声明left、right
+            double left=0,right=0;
+            String lStr=vector.get(2),rStr=vector.get(3);
+            //变量
+            if(lStr.startsWith("T")){
+                left=TmpMap.get(lStr);
+            }else {
+                left=Double.parseDouble(lStr);
+            }
+            if (rStr.startsWith("T")){
+                right=TmpMap.get(rStr);
+            }else if (!rStr.equals("_")){
+                right=Double.parseDouble(rStr);
+            }
+            switch (opt){
+                case ":=":
+                    TmpMap.put(vector.get(4),left);
+                    break;
+                case "ADD":
+                    TmpMap.put(vector.get(4),left+right);
+                    break;
+                case "SUB":
+                    TmpMap.put(vector.get(4),left-right);
+                    break;
+                case "MUL":
+                    TmpMap.put(vector.get(4),left*right);
+                    break;
+                case "DIV":
+                    TmpMap.put(vector.get(4),left/right);
+                    break;
+                case "POW":
+                    TmpMap.put(vector.get(4),Math.pow(left,right));
+                    break;
+                case "MUS":
+                    TmpMap.put(vector.get(4),-left);
+                    break;
+                case "MOD":
+                    TmpMap.put(vector.get(4),left%right);
+                    break;
+            }
+        }//执行完成
+        //打印寄存器值
+        int len=MidList.size();
+        StringBuilder stringBuilder=new StringBuilder("寄存器的值如下\n");
+        for (int i=1;i<=len;i++){
+            String string="寄存器：T"+i+"  值为"+TmpMap.get("T"+i)+"\n";
+            stringBuilder.append(string);
+        }
+        stringBuilder.append("运行结果为：").append(TmpMap.get("T" + len));
+        reg=stringBuilder.toString();
+        Utils.Notice(this,reg);
     }
     //结束
     private void initComponents() {
@@ -262,6 +359,7 @@ public class SemanticAnalysis extends JFrame implements ActionListener {
         start = new JButton();
         oneDis = new JButton();
         allDis = new JButton();
+        RunCode = new JButton();
         JScrollPane jScrollPane1 = new JScrollPane();
         JTable jTable1 = new JTable();
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
@@ -279,81 +377,84 @@ public class SemanticAnalysis extends JFrame implements ActionListener {
         start.setText("开始分析");
         oneDis.setText("一步显示");
         allDis.setText("全部显示");
+        RunCode.setText("运行代码");
         jTable1.setModel(AnaLysisModel);
         jScrollPane1.setViewportView(jTable1);
-        GroupLayout layout = new GroupLayout(getContentPane());
+        GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
-                layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                         .addGroup(layout.createSequentialGroup()
                                 .addContainerGap()
-                                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                         .addGroup(layout.createSequentialGroup()
                                                 .addComponent(jLabel3)
-                                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                                 .addComponent(jSeparator3))
                                         .addGroup(layout.createSequentialGroup()
-                                                .addComponent(jLabel1, GroupLayout.PREFERRED_SIZE, 41, GroupLayout.PREFERRED_SIZE)
-                                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 41, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                                 .addComponent(jSeparator1))
-                                        .addComponent(jScrollPane1, GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
+                                        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 494, Short.MAX_VALUE)
                                         .addGroup(layout.createSequentialGroup()
-                                                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                                                        .addComponent(Reset, GroupLayout.PREFERRED_SIZE, 78, GroupLayout.PREFERRED_SIZE)
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                                        .addComponent(Reset, javax.swing.GroupLayout.PREFERRED_SIZE, 78, javax.swing.GroupLayout.PREFERRED_SIZE)
                                                         .addGroup(layout.createSequentialGroup()
-                                                                .addComponent(start, GroupLayout.PREFERRED_SIZE, 90, GroupLayout.PREFERRED_SIZE)
-                                                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                                                .addComponent(oneDis, GroupLayout.PREFERRED_SIZE, 90, GroupLayout.PREFERRED_SIZE)
-                                                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                                                .addComponent(allDis, GroupLayout.PREFERRED_SIZE, 90, GroupLayout.PREFERRED_SIZE)))
+                                                                .addComponent(start, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                .addComponent(oneDis, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                                .addComponent(allDis, javax.swing.GroupLayout.PREFERRED_SIZE, 90, javax.swing.GroupLayout.PREFERRED_SIZE)))
                                                 .addGap(0, 0, Short.MAX_VALUE))
                                         .addGroup(layout.createSequentialGroup()
-                                                .addComponent(jLabel2, GroupLayout.PREFERRED_SIZE, 106, GroupLayout.PREFERRED_SIZE)
-                                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                                .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 106, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                                 .addComponent(jTextField)))
-                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
-                                        .addComponent(jScrollPane2, GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                                         .addGroup(layout.createSequentialGroup()
-                                                .addComponent(create, GroupLayout.PREFERRED_SIZE, 106, GroupLayout.PREFERRED_SIZE)
-                                                .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-                                                .addComponent(save, GroupLayout.PREFERRED_SIZE, 78, GroupLayout.PREFERRED_SIZE)
-                                                .addGap(0, 104, Short.MAX_VALUE))
+                                                .addComponent(create, javax.swing.GroupLayout.PREFERRED_SIZE, 106, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                                .addComponent(save, javax.swing.GroupLayout.PREFERRED_SIZE, 78, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 12, Short.MAX_VALUE)
+                                                .addComponent(RunCode, javax.swing.GroupLayout.PREFERRED_SIZE, 92, javax.swing.GroupLayout.PREFERRED_SIZE))
                                         .addGroup(layout.createSequentialGroup()
-                                                .addComponent(jLabel4, GroupLayout.PREFERRED_SIZE, 56, GroupLayout.PREFERRED_SIZE)
-                                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                                .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 56, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                                 .addComponent(jSeparator2)))
                                 .addContainerGap())
         );
         layout.setVerticalGroup(
-                layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                         .addGroup(layout.createSequentialGroup()
                                 .addContainerGap()
-                                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.TRAILING)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                                         .addComponent(jLabel1)
-                                        .addComponent(jSeparator1, GroupLayout.PREFERRED_SIZE, 10, GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE)
                                         .addComponent(jLabel4)
-                                        .addComponent(jSeparator2, GroupLayout.PREFERRED_SIZE, 10, GroupLayout.PREFERRED_SIZE))
-                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                        .addComponent(jSeparator2, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                         .addComponent(jLabel2)
-                                        .addComponent(jTextField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(jTextField, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                         .addComponent(create)
-                                        .addComponent(save))
-                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.LEADING)
+                                        .addComponent(save)
+                                        .addComponent(RunCode))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                                         .addGroup(layout.createSequentialGroup()
                                                 .addComponent(Reset)
-                                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.TRAILING)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                                                         .addComponent(jLabel3)
-                                                        .addComponent(jSeparator3, GroupLayout.PREFERRED_SIZE, 10, GroupLayout.PREFERRED_SIZE))
-                                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                                        .addComponent(jSeparator3, javax.swing.GroupLayout.PREFERRED_SIZE, 10, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                                                         .addComponent(start)
                                                         .addComponent(oneDis)
                                                         .addComponent(allDis))
-                                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                                                 .addComponent(jScrollPane1))
                                         .addComponent(jScrollPane2))
                                 .addContainerGap())
@@ -370,6 +471,7 @@ public class SemanticAnalysis extends JFrame implements ActionListener {
         else if (e.getSource()==oneDis)oneDis();
         else if (e.getSource()==allDis)allDis();
         else if (e.getSource()==start)start();
+        else if (e.getSource()==RunCode)RunCode();
     }
     void AddListener(){
         create.addActionListener(this);
@@ -378,6 +480,7 @@ public class SemanticAnalysis extends JFrame implements ActionListener {
         oneDis.addActionListener(this);
         allDis.addActionListener(this);
         start.addActionListener(this);
+        RunCode.addActionListener(this);
         jTextField.addFocusListener(new FocusListener() {
             @Override
             public void focusGained(FocusEvent e) {

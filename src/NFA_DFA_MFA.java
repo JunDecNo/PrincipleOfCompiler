@@ -635,15 +635,15 @@ public class NFA_DFA_MFA implements ActionListener {
             if (!ends.contains(dfa_status.get(i))) not_ends.add(dfa_status.get(i));
         matrix.add(not_ends);
         matrix.add(ends);
-        matrix=SetArr(matrix);
         while (true) {
-            int len = matrix.size();
+            int len = matrix.size(),resLen=0;
             for (int i = 0; i < len; i++) {//开始顺序判断集合
                 for (String s : Sigma) {//输入符号Sigma
-                    ArrayList<ArrayList<Integer>> result = new ArrayList<>();//保存结果集合
-                    if (isContain(matrix, Next(matrix.get(i), s.charAt(0))) == -1) {//不包含产生集合
+                    if (matrix.get(i).size()!=1&&isContain(matrix, Next(matrix.get(i), s.charAt(0))) == -1) {//不包含产生集合
                         ArrayList<Integer> index = matrix.get(i);//选择存在状态不同的集合
-                        //划分
+                        System.out.println("index:"+index);
+                        ArrayList<ArrayList<Integer>> result = new ArrayList<>();//保存结果集合
+                        //划分，到相同状态划分在一起
                         for (ArrayList<Integer> integers : matrix) {
                             ArrayList<Integer> arrayList = new ArrayList<>();//array保存一个集合
                             for (Integer integer : index) {
@@ -651,7 +651,7 @@ public class NFA_DFA_MFA implements ActionListener {
                                     arrayList.add(integer);
                                 }
                             }
-                            result.add(arrayList);
+                            if (!arrayList.isEmpty())result.add(arrayList);
                         }
                         ArrayList<Integer> arrayList = new ArrayList<>();
                         for (Integer integer : index) {//不存在时
@@ -661,15 +661,16 @@ public class NFA_DFA_MFA implements ActionListener {
                             }
                         }
                         result.add(arrayList);
+                        for (ArrayList<Integer>a:result)System.out.print(a);
+                        System.out.println("res");
                         matrix.remove(i);
                         Add(matrix, result);
+                        //划分结束
                     }
                 }
-                if (len != matrix.size()) break;
             }
             if (len == matrix.size()) break;
         }
-        matrix=SetArr(matrix);
         Collections.sort(matrix, new MyIntComparator());
         String string="";
         for (int i=0;i<matrix.size();i++){
@@ -732,6 +733,7 @@ public class NFA_DFA_MFA implements ActionListener {
     //判断element是否包含在contain中
     int isContain(ArrayList<ArrayList<Integer>> contain, ArrayList<Integer> element) {
         if (element.size() == 0) return -2;
+        if (element.size()==1&&element.get(0)==-1)return 0;
         for (int i = 0; i < contain.size(); i++) {
             if (contain.get(i).size() == element.size()) {
                 boolean is = false;
