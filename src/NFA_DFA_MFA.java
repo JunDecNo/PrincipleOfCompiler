@@ -641,7 +641,6 @@ public class NFA_DFA_MFA implements ActionListener {
                 for (String s : Sigma) {//输入符号Sigma
                     if (matrix.get(i).size()!=1&&isContain(matrix, Next(matrix.get(i), s.charAt(0))) == -1) {//不包含产生集合
                         ArrayList<Integer> index = matrix.get(i);//选择存在状态不同的集合
-                        System.out.println("index:"+index);
                         ArrayList<ArrayList<Integer>> result = new ArrayList<>();//保存结果集合
                         //划分，到相同状态划分在一起
                         for (ArrayList<Integer> integers : matrix) {
@@ -661,8 +660,6 @@ public class NFA_DFA_MFA implements ActionListener {
                             }
                         }
                         result.add(arrayList);
-                        for (ArrayList<Integer>a:result)System.out.print(a);
-                        System.out.println("res");
                         matrix.remove(i);
                         Add(matrix, result);
                         //划分结束

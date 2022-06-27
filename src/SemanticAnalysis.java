@@ -76,8 +76,8 @@ public class SemanticAnalysis extends JFrame implements ActionListener {
     }
     void start(){
         Address=0;TempIndex=0;
-        Semantic.clear();
-        MidStack.clear();
+        Semantic.clear();//语义栈
+        MidStack.clear();//临时变量栈
         MidList.clear();
         Display.clear();
         AnaLysisModel.setRowCount(0);
@@ -212,7 +212,7 @@ public class SemanticAnalysis extends JFrame implements ActionListener {
         result= String.format("%.2f",Semantic.pop());
         ButtonControl(true);
     }
-    String GetStack(){
+    String GetStack(){//使得语义栈在分析过程中的显示
         StringBuilder stringBuilder=new StringBuilder();
         Stack<Double> temp = new Stack<>();
         stringBuilder.append("-");

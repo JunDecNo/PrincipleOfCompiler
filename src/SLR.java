@@ -118,7 +118,7 @@ public class SLR{
             Project_Model.addRow(vector);
         }
     }
-    void Struct_LR_0_Table(){
+    void Struct_LR_0_Table(){//LR0文法的构造
         Struct_Model.setRowCount(0);Struct_Model.setColumnCount(0);
         //使用该方法，证明不存在移进-归约冲突
         //初始化列数据
