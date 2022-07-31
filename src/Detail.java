@@ -185,7 +185,7 @@ public class Detail extends javax.swing.JFrame{
         Link.addMouseListener(new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                String url="https://github.com/XifaNiu/Principle_OF_Compilation";
+                String url="https://github.com/JunDecNo/PrincipleOfCompiler";
                 try {
                     Runtime.getRuntime().exec("rundll32 url.dll,FileProtocolHandler "+url);
                 } catch (IOException ioException) {
